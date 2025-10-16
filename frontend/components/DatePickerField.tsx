@@ -6,36 +6,82 @@ import { Button, HelperText } from 'react-native-paper';
 import theme from '../constants/theme';
 
 /**
- * Campo de seleção de data integrado com react-hook-form, com validação de datas futuras e botões para iOS.
+ * Campo de seleção de data integrado com react-hook-form.
  * @param control Controlador do react-hook-form.
  * @param name Nome do campo no formulário.
  * @param label Rótulo do campo.
+ * @param allowFutureDates Se permite selecionar datas futuras (padrão: false).
+ * @param maximumDate Data máxima permitida (opcional, sobrescreve allowFutureDates).
+ * @param minimumDate Data mínima permitida (opcional).
  */
 interface DatePickerFieldProps {
   control: any;
   name: string;
   label: string;
+  allowFutureDates?: boolean;
+  maximumDate?: Date;
+  minimumDate?: Date;
 }
 
-export default function DatePickerField({ control, name, label }: DatePickerFieldProps) {
+export default function DatePickerField({ 
+  control, 
+  name, 
+  label, 
+  allowFutureDates = false,
+  maximumDate,
+  minimumDate
+}: DatePickerFieldProps) {
   const [show, setShow] = useState(false);
 
   /**
-   * Valida se a data selecionada não é futura.
+   * Valida a data selecionada baseado nas configurações.
    * @param selectedDate Data a ser validada.
-   * @returns True se a data é válida (não futura), false caso contrário.
+   * @returns True se a data é válida, false caso contrário.
    */
   const validateDate = (selectedDate: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selected = new Date(selectedDate);
     selected.setHours(0, 0, 0, 0);
-    if (selected > today) {
-      Alert.alert('Data inválida', 'A data de compra não pode ser no futuro. Por favor, selecione uma data válida.', [
-        { text: 'OK' },
-      ]);
+
+    // Se não permite datas futuras e a data selecionada é futura
+    if (!allowFutureDates && selected > today) {
+      Alert.alert(
+        'Data inválida', 
+        'A data não pode ser no futuro. Por favor, selecione uma data válida.', 
+        [{ text: 'OK' }]
+      );
       return false;
     }
+
+    // Validações customizadas de data máxima
+    if (maximumDate) {
+      const maxDate = new Date(maximumDate);
+      maxDate.setHours(0, 0, 0, 0);
+      if (selected > maxDate) {
+        Alert.alert(
+          'Data inválida', 
+          `A data não pode ser após ${maxDate.toLocaleDateString('pt-BR')}.`, 
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+    }
+
+    // Validações customizadas de data mínima
+    if (minimumDate) {
+      const minDate = new Date(minimumDate);
+      minDate.setHours(0, 0, 0, 0);
+      if (selected < minDate) {
+        Alert.alert(
+          'Data inválida', 
+          `A data não pode ser antes de ${minDate.toLocaleDateString('pt-BR')}.`, 
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -104,6 +150,24 @@ export default function DatePickerField({ control, name, label }: DatePickerFiel
     return new Date().toISOString().split('T')[0];
   };
 
+  /**
+   * Obtém a data máxima para o picker
+   */
+  const getMaximumDate = (): Date | undefined => {
+    if (maximumDate) return maximumDate;
+    if (!allowFutureDates) return new Date();
+    return undefined;
+  };
+
+  /**
+   * Obtém o valor máximo para o input web
+   */
+  const getWebMaxDate = (): string => {
+    if (maximumDate) return maximumDate.toISOString().split('T')[0];
+    if (!allowFutureDates) return new Date().toISOString().split('T')[0];
+    return '';
+  };
+
   return (
     <Controller
       control={control}
@@ -119,6 +183,8 @@ export default function DatePickerField({ control, name, label }: DatePickerFiel
                 type="date"
                 value={getInputDateValue(value)}
                 onChange={(e) => handleWebDateChange(e, onChange)}
+                max={getWebMaxDate()}
+                min={minimumDate ? minimumDate.toISOString().split('T')[0] : undefined}
                 style={{
                   padding: '12px',
                   border: `1px solid ${error ? theme.colors.error : theme.colors.primary}`,
@@ -129,13 +195,15 @@ export default function DatePickerField({ control, name, label }: DatePickerFiel
                   color: theme.colors.text,
                   fontFamily: theme.fonts.bodyMedium.fontFamily,
                 }}
-                max={new Date().toISOString().split('T')[0]} // Não permite datas futuras
               />
             </View>
           ) : (
             // ✅ PARA MOBILE: Usar DateTimePicker normal
             <>
-              <TouchableOpacity onPress={showDatepicker} style={styles.dateDisplay}>
+              <TouchableOpacity onPress={showDatepicker} style={[
+                styles.dateDisplay,
+                { borderColor: error ? theme.colors.error : theme.colors.primary }
+              ]}>
                 <Text style={styles.dateText}>{getDisplayDate(value)}</Text>
                 <Button mode="outlined" onPress={showDatepicker} style={styles.button} icon="calendar">
                   Selecionar
@@ -148,7 +216,8 @@ export default function DatePickerField({ control, name, label }: DatePickerFiel
                   mode="date"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={(event, selectedDate) => handleDateChange(event, selectedDate, onChange)}
-                  maximumDate={new Date()}
+                  maximumDate={getMaximumDate()}
+                  minimumDate={minimumDate}
                   style={styles.datePicker}
                 />
               )}
@@ -192,7 +261,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderWidth: 1,
-    borderColor: theme.colors.primary,
     borderRadius: 8,
     backgroundColor: theme.colors.background,
   },

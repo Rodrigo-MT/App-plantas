@@ -50,16 +50,29 @@ export class LocationsController {
     required: false,
     description: 'Filtrar por tipo de ambiente',
     example: 'indoor',
-    enum: ['indoor', 'outdoor', 'greenhouse']
+    enum: ['indoor', 'outdoor', 'balcony', 'garden', 'terrace']
+  })
+  @ApiQuery({ 
+    name: 'sunlight', 
+    required: false,
+    description: 'Filtrar por nível de luz solar',
+    example: 'partial',
+    enum: ['full', 'partial', 'shade']
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de localizações retornada com sucesso', 
     type: [Location] 
   })
-  findAll(@Query('type') type?: string): Promise<Location[]> {
+  findAll(
+    @Query('type') type?: string,
+    @Query('sunlight') sunlight?: string,
+  ): Promise<Location[]> {
     if (type) {
       return this.locationsService.findByType(type);
+    }
+    if (sunlight) {
+      return this.locationsService.findBySunlight(sunlight);
     }
     return this.locationsService.findAll();
   }
@@ -180,6 +193,10 @@ export class LocationsController {
   @ApiResponse({ 
     status: HttpStatus.NOT_FOUND, 
     description: 'Localização não encontrada' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.BAD_REQUEST, 
+    description: 'Localização não pode ser removida pois possui plantas associadas' 
   })
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.locationsService.remove(id);

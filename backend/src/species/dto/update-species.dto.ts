@@ -3,29 +3,21 @@ import { CreateSpeciesDto } from './create-species.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateSpeciesDto extends PartialType(CreateSpeciesDto) {
-  @ApiPropertyOptional({ description: 'Nome popular da espécie', example: 'Novo Nome da Espécie' })
+  @ApiPropertyOptional({ description: 'Nome científico da espécie', example: 'Novo Nome Científico' })
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Nome científico da espécie', example: 'Novus scientificus' })
-  scientificName?: string;
+  @ApiPropertyOptional({ description: 'Nome comum/popular da espécie', example: 'Novo Nome Comum' })
+  commonName?: string;
 
   @ApiPropertyOptional({ description: 'Descrição detalhada da espécie', example: 'Nova descrição' })
   description?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Frequência de rega recomendada',
-    example: 'biweekly',
-    enum: ['daily', 'weekly', 'biweekly', 'monthly']
-  })
-  waterFrequency?: string;
-
-  @ApiPropertyOptional({ 
-    description: 'Requisitos de luz solar',
-    example: 'medium',
-    enum: ['low', 'medium', 'high']
-  })
-  lightRequirements?: string;
-
-  @ApiPropertyOptional({ description: 'Instruções específicas de cuidado', example: 'Novas instruções' })
+  @ApiPropertyOptional({ description: 'Instruções de cuidado', example: 'Novas instruções de cuidado' })
   careInstructions?: string;
+
+  @ApiPropertyOptional({ description: 'Condições ideais de cultivo', example: 'Novas condições ideais' })
+  idealConditions?: string;
+
+  @ApiPropertyOptional({ description: 'URL da foto da espécie', example: 'https://exemplo.com/nova-foto.jpg' })
+  photo?: string;
 }

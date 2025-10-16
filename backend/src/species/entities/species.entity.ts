@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Plant } from '../../plants/entities/plant.entity';
 
@@ -8,39 +8,39 @@ export class Species {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ description: 'Nome popular da espécie', example: 'Rosa do Deserto' })
+  @ApiProperty({ description: 'Nome científico da espécie', example: 'Monstera deliciosa' })
   @Column()
   name: string;
 
-  @ApiProperty({ description: 'Nome científico da espécie', example: 'Adenium obesum' })
-  @Column()
-  scientificName: string;
+  @ApiPropertyOptional({ description: 'Nome comum/popular da espécie', example: 'Costela de Adão' })
+  @Column({ nullable: true })
+  commonName?: string;
 
-  @ApiPropertyOptional({ description: 'Descrição detalhada da espécie', example: 'Planta suculenta originária da África' })
+  @ApiPropertyOptional({ description: 'Descrição detalhada da espécie', example: 'Planta tropical com folhas grandes e recortadas.' })
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description?: string;
 
-  @ApiProperty({ 
-    description: 'Frequência de rega recomendada',
-    example: 'weekly',
-    enum: ['daily', 'weekly', 'biweekly', 'monthly']
-  })
-  @Column()
-  waterFrequency: string;
-
-  @ApiProperty({ 
-    description: 'Requisitos de luz solar',
-    example: 'high', 
-    enum: ['low', 'medium', 'high']
-  })
-  @Column()
-  lightRequirements: string;
-
-  @ApiPropertyOptional({ description: 'Instruções específicas de cuidado', example: 'Evitar excesso de água no inverno' })
+  @ApiPropertyOptional({ description: 'Instruções de cuidado', example: 'Luz indireta, rega moderada.' })
   @Column({ type: 'text', nullable: true })
-  careInstructions: string;
+  careInstructions?: string;
+
+  @ApiPropertyOptional({ description: 'Condições ideais de cultivo', example: 'Sol parcial, umidade média.' })
+  @Column({ type: 'text', nullable: true })
+  idealConditions?: string;
+
+  @ApiPropertyOptional({ description: 'URL da foto da espécie', example: 'https://exemplo.com/especie.jpg' })
+  @Column({ nullable: true })
+  photo?: string;
 
   @ApiProperty({ type: () => [Plant], description: 'Plantas desta espécie' })
   @OneToMany(() => Plant, (plant) => plant.species)
   plants: Plant[];
+
+  @ApiProperty({ description: 'Data de criação do registro' })
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ApiProperty({ description: 'Data da última atualização' })
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

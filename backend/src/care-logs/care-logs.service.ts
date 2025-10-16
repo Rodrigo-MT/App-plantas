@@ -19,7 +19,10 @@ export class CareLogsService {
    */
   async create(createCareLogDto: CreateCareLogDto): Promise<CareLog> {
     try {
-      const careLog = this.careLogsRepository.create(createCareLogDto);
+      const careLog = this.careLogsRepository.create({
+        ...createCareLogDto,
+        date: new Date(createCareLogDto.date), // Converte string para Date
+      });
       return await this.careLogsRepository.save(careLog);
     } catch (error) {
       throw new BadRequestException('Erro ao criar log de cuidado: ' + error.message);
@@ -27,13 +30,13 @@ export class CareLogsService {
   }
 
   /**
-   * Retorna todos os logs com suas relações
-   * @returns Lista de logs com planta associada
+   * Retorna todos os logs
+   * @returns Lista de logs
    */
   async findAll(): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
       relations: ['plant'],
-      order: { performedAt: 'DESC' }, // Ordena do mais recente para o mais antigo
+      order: { date: 'DESC' }, // Ordena do mais recente para o mais antigo
     });
   }
 
@@ -44,9 +47,22 @@ export class CareLogsService {
    */
   async findByPlantId(plantId: string): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
-      where: { plant: { id: plantId } },
+      where: { plantId },
       relations: ['plant'],
-      order: { performedAt: 'DESC' },
+      order: { date: 'DESC' },
+    });
+  }
+
+  /**
+   * Busca logs por tipo
+   * @param type Tipo de cuidado
+   * @returns Logs do tipo especificado
+   */
+  async findByType(type: string): Promise<CareLog[]> {
+    return await this.careLogsRepository.find({
+      where: { type },
+      relations: ['plant'],
+      order: { date: 'DESC' },
     });
   }
 
@@ -59,10 +75,10 @@ export class CareLogsService {
   async findByDateRange(startDate: Date, endDate: Date): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
       where: {
-        performedAt: Between(startDate, endDate),
+        date: Between(startDate, endDate),
       },
       relations: ['plant'],
-      order: { performedAt: 'DESC' },
+      order: { date: 'DESC' },
     });
   }
 
@@ -95,7 +111,14 @@ export class CareLogsService {
     const careLog = await this.findOne(id); // Valida se o log existe
     
     try {
-      const updated = this.careLogsRepository.merge(careLog, updateCareLogDto);
+      const updateData: any = { ...updateCareLogDto };
+      
+      // Converte date de string para Date se fornecido
+      if (updateCareLogDto.date) {
+        updateData.date = new Date(updateCareLogDto.date);
+      }
+      
+      const updated = this.careLogsRepository.merge(careLog, updateData);
       return await this.careLogsRepository.save(updated);
     } catch (error) {
       throw new BadRequestException('Erro ao atualizar log de cuidado: ' + error.message);
@@ -126,5 +149,42 @@ export class CareLogsService {
       .addSelect('COUNT(careLog.id)', 'count')
       .groupBy('careLog.type')
       .getRawMany();
+  }
+
+  /**
+   * Busca logs recentes (últimos 30 dias)
+   * @returns Logs dos últimos 30 dias
+   */
+  async findRecent(): Promise<CareLog[]> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    return await this.careLogsRepository.find({
+      where: {
+        date: Between(thirtyDaysAgo, new Date()),
+      },
+      relations: ['plant'],
+      order: { date: 'DESC' },
+    });
+  }
+
+  /**
+   * Busca logs bem-sucedidos
+   * @returns Logs com sucesso = true
+   */
+  async findSuccessful(): Promise<CareLog[]> {
+    return await this.careLogsRepository.find({
+      where: { success: true },
+      relations: ['plant'],
+      order: { date: 'DESC' },
+    });
+  }
+
+  /**
+   * Contagem total de logs no sistema
+   * @returns Número total de logs
+   */
+  async getTotalCount(): Promise<number> {
+    return await this.careLogsRepository.count();
   }
 }

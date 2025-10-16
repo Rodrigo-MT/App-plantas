@@ -1,29 +1,32 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   // Habilita validação global de DTOs
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Remove propriedades não definidas nos DTOs
-    forbidNonWhitelisted: true, // Rejeita requisições com propriedades extras
-    transform: true, // Transforma tipos automaticamente
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
   }));
 
-  // Configuração do CORS para o frontend React Native
+  // Configuração do CORS usando variáveis de ambiente
+  const corsOrigins = configService.get('CORS_ORIGINS', 'http://localhost:3001').split(',');
   app.enableCors({
-    origin: ['http://localhost:3001', 'exp://localhost:19000'], // URLs do frontend
+    origin: corsOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: true,
   });
 
-  // Configuração da documentação Swagger
+  // Configuração da documentação Swagger (fixa)
   const config = new DocumentBuilder()
     .setTitle('🌱 Plant Care API')
-    .setDescription('API completa para gerenciamento de plantas domésticas. Fornece CRUDs para plantas, espécies, localizações, lembretes e logs de cuidados.')
+    .setDescription('API completa para gerenciamento de plantas domésticas')
     .setVersion('1.0')
     .addTag('plants', 'Operações relacionadas a plantas')
     .addTag('species', 'Operações relacionadas a espécies de plantas')
@@ -38,10 +41,11 @@ async function bootstrap() {
     customCss: '.swagger-ui .topbar { display: none }',
   });
 
-  const port = process.env.PORT || 3000;
+  const port = configService.get('PORT', 3000);
   await app.listen(port);
   
   console.log(`🚀 API rodando em: http://localhost:${port}`);
   console.log(`📚 Documentação disponível em: http://localhost:${port}/api`);
+  console.log(`🌍 Ambiente: ${configService.get('NODE_ENV', 'development')}`);
 }
 bootstrap();

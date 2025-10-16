@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsUUID, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePlantDto {
@@ -9,38 +9,6 @@ export class CreatePlantDto {
   })
   @IsString()
   name: string;
-
-  @ApiPropertyOptional({ 
-    description: 'URL da imagem da planta', 
-    example: 'https://exemplo.com/planta.jpg' 
-  })
-  @IsOptional()
-  @IsString()
-  imageUrl?: string;
-
-  @ApiPropertyOptional({ 
-    description: 'Observações sobre a planta', 
-    example: 'Planta que precisa de sol direto',
-    maxLength: 500
-  })
-  @IsOptional()
-  @IsString()
-  notes?: string;
-
-  @ApiProperty({ 
-    description: 'Status de saúde da planta',
-    example: 'healthy',
-    enum: ['healthy', 'needs_care', 'sick']
-  })
-  @IsEnum(['healthy', 'needs_care', 'sick'])
-  healthStatus: string;
-
-  @ApiProperty({ 
-    description: 'Data de plantio (formato ISO: YYYY-MM-DD)',
-    example: '2024-01-15'
-  })
-  @IsDateString()
-  plantingDate: string;
 
   @ApiProperty({ 
     description: 'ID da espécie da planta (UUID)',
@@ -55,4 +23,28 @@ export class CreatePlantDto {
   })
   @IsUUID()
   locationId: string;
+
+  @ApiProperty({ 
+    description: 'Data de compra/plantio (formato ISO: YYYY-MM-DD)',
+    example: '2024-01-15'
+  })
+  @IsDateString()
+  purchaseDate: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Observações sobre a planta', 
+    example: 'Planta que precisa de sol direto',
+    maxLength: 500
+  })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional({ 
+    description: 'URL da foto da planta', 
+    example: 'https://exemplo.com/planta.jpg' 
+  })
+  @IsOptional()
+  @IsString()
+  photo?: string;
 }

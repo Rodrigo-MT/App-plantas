@@ -21,6 +21,7 @@ export class CareRemindersService {
     try {
       const reminder = this.careRemindersRepository.create({
         ...createCareReminderDto,
+        lastDone: new Date(createCareReminderDto.lastDone), // Converte string para Date
         nextDue: new Date(createCareReminderDto.nextDue), // Converte string para Date
       });
       return await this.careRemindersRepository.save(reminder);
@@ -30,8 +31,8 @@ export class CareRemindersService {
   }
 
   /**
-   * Retorna todos os lembretes com suas relações
-   * @returns Lista de lembretes com planta associada
+   * Retorna todos os lembretes
+   * @returns Lista de lembretes
    */
   async findAll(): Promise<CareReminder[]> {
     return await this.careRemindersRepository.find({
@@ -47,7 +48,20 @@ export class CareRemindersService {
    */
   async findByPlantId(plantId: string): Promise<CareReminder[]> {
     return await this.careRemindersRepository.find({
-      where: { plant: { id: plantId } },
+      where: { plantId },
+      relations: ['plant'],
+      order: { nextDue: 'ASC' },
+    });
+  }
+
+  /**
+   * Busca lembretes por tipo
+   * @param type Tipo de cuidado
+   * @returns Lembretes do tipo especificado
+   */
+  async findByType(type: string): Promise<CareReminder[]> {
+    return await this.careRemindersRepository.find({
+      where: { type },
       relations: ['plant'],
       order: { nextDue: 'ASC' },
     });
@@ -84,7 +98,10 @@ export class CareRemindersService {
     try {
       const updateData: any = { ...updateCareReminderDto };
       
-      // Converte nextDue de string para Date se fornecido
+      // Converte datas de string para Date se fornecidas
+      if (updateCareReminderDto.lastDone) {
+        updateData.lastDone = new Date(updateCareReminderDto.lastDone);
+      }
       if (updateCareReminderDto.nextDue) {
         updateData.nextDue = new Date(updateCareReminderDto.nextDue);
       }
@@ -145,5 +162,43 @@ export class CareRemindersService {
       .andWhere('reminder.isActive = :isActive', { isActive: true })
       .orderBy('reminder.nextDue', 'ASC')
       .getMany();
+  }
+
+  /**
+   * Marca um lembrete como concluído
+   * @param id UUID do lembrete
+   * @returns Lembrete atualizado
+   */
+  async markAsDone(id: string): Promise<CareReminder> {
+    const reminder = await this.findOne(id);
+    
+    const today = new Date();
+    const nextDue = new Date();
+    nextDue.setDate(today.getDate() + reminder.frequency);
+
+    reminder.lastDone = today;
+    reminder.nextDue = nextDue;
+
+    return await this.careRemindersRepository.save(reminder);
+  }
+
+  /**
+   * Busca lembretes ativos
+   * @returns Lembretes ativos
+   */
+  async findActive(): Promise<CareReminder[]> {
+    return await this.careRemindersRepository.find({
+      where: { isActive: true },
+      relations: ['plant'],
+      order: { nextDue: 'ASC' },
+    });
+  }
+
+  /**
+   * Contagem total de lembretes no sistema
+   * @returns Número total de lembretes
+   */
+  async getTotalCount(): Promise<number> {
+    return await this.careRemindersRepository.count();
   }
 }

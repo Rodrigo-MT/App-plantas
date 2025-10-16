@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Plant } from '../../plants/entities/plant.entity';
 
@@ -15,32 +15,44 @@ export class Location {
   @ApiProperty({ 
     description: 'Tipo de ambiente',
     example: 'indoor',
-    enum: ['indoor', 'outdoor', 'greenhouse']
+    enum: ['indoor', 'outdoor', 'balcony', 'garden', 'terrace']
   })
   @Column()
   type: string;
 
-  @ApiPropertyOptional({ description: 'Descrição da localização', example: 'Prateleira perto da janela' })
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @ApiProperty({ 
+    description: 'Nível de luz solar',
+    example: 'partial',
+    enum: ['full', 'partial', 'shade']
+  })
+  @Column()
+  sunlight: string;
 
   @ApiProperty({ 
-    description: 'Nível de luz no local',
-    example: 'high',
+    description: 'Nível de umidade',
+    example: 'medium',
     enum: ['low', 'medium', 'high']
   })
-  @Column({ default: 'medium' })
-  lightLevel: string;
-
-  @ApiProperty({ 
-    description: 'Nível de umidade no local',
-    example: 'medium', 
-    enum: ['low', 'medium', 'high']
-  })
-  @Column({ default: 'medium' })
+  @Column()
   humidity: string;
+
+  @ApiPropertyOptional({ description: 'Descrição da localização', example: 'Ambiente interno com luz indireta' })
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'URL da foto da localização', example: 'https://exemplo.com/localizacao.jpg' })
+  @Column({ nullable: true })
+  photo?: string;
 
   @ApiProperty({ type: () => [Plant], description: 'Plantas nesta localização' })
   @OneToMany(() => Plant, (plant) => plant.location)
   plants: Plant[];
+
+  @ApiProperty({ description: 'Data de criação do registro' })
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ApiProperty({ description: 'Data da última atualização' })
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

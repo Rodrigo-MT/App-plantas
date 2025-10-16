@@ -8,10 +8,9 @@ import {
   Delete, 
   ParseUUIDPipe,
   HttpStatus,
-  HttpCode,
-  Query 
+  HttpCode
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SpeciesService } from './species.service';
 import { CreateSpeciesDto } from './dto/create-species.dto';
 import { UpdateSpeciesDto } from './dto/update-species.dto';
@@ -34,7 +33,7 @@ export class SpeciesController {
   })
   @ApiResponse({ 
     status: HttpStatus.BAD_REQUEST, 
-    description: 'Dados inválidos fornecidos ou nome científico duplicado' 
+    description: 'Dados inválidos fornecidos ou nome duplicado' 
   })
   create(@Body() createSpeciesDto: CreateSpeciesDto): Promise<Species> {
     return this.speciesService.create(createSpeciesDto);
@@ -45,90 +44,13 @@ export class SpeciesController {
     summary: 'Listar todas as espécies',
     description: 'Retorna todas as espécies cadastradas no sistema' 
   })
-  @ApiQuery({ 
-    name: 'lightRequirements', 
-    required: false,
-    description: 'Filtrar por requisitos de luz',
-    example: 'low',
-    enum: ['low', 'medium', 'high']
-  })
-  @ApiQuery({ 
-    name: 'waterFrequency', 
-    required: false,
-    description: 'Filtrar por frequência de rega',
-    example: 'weekly',
-    enum: ['daily', 'weekly', 'biweekly', 'monthly']
-  })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de espécies retornada com sucesso', 
     type: [Species] 
   })
-  findAll(
-    @Query('lightRequirements') lightRequirements?: string,
-    @Query('waterFrequency') waterFrequency?: string,
-  ): Promise<Species[]> {
-    if (lightRequirements) {
-      return this.speciesService.findByLightRequirements(lightRequirements);
-    }
-    if (waterFrequency) {
-      return this.speciesService.findByWaterFrequency(waterFrequency);
-    }
+  findAll(): Promise<Species[]> {
     return this.speciesService.findAll();
-  }
-
-  @Get('stats/light-requirements')
-  @ApiOperation({ 
-    summary: 'Estatísticas de requisitos de luz',
-    description: 'Retorna contagem de espécies por requisitos de luz' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Estatísticas calculadas com sucesso',
-    schema: {
-      example: [
-        { lightRequirements: 'low', count: 5 },
-        { lightRequirements: 'medium', count: 8 },
-        { lightRequirements: 'high', count: 3 }
-      ]
-    }
-  })
-  getLightRequirementsStats(): Promise<{ lightRequirements: string; count: number }[]> {
-    return this.speciesService.getLightRequirementsStats();
-  }
-
-  @Get('stats/water-frequency')
-  @ApiOperation({ 
-    summary: 'Estatísticas de frequência de rega',
-    description: 'Retorna contagem de espécies por frequência de rega' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Estatísticas calculadas com sucesso',
-    schema: {
-      example: [
-        { waterFrequency: 'daily', count: 2 },
-        { waterFrequency: 'weekly', count: 10 },
-        { waterFrequency: 'biweekly', count: 4 }
-      ]
-    }
-  })
-  getWaterFrequencyStats(): Promise<{ waterFrequency: string; count: number }[]> {
-    return this.speciesService.getWaterFrequencyStats();
-  }
-
-  @Get('easy-care')
-  @ApiOperation({ 
-    summary: 'Espécies fáceis de cuidar',
-    description: 'Retorna espécies consideradas fáceis de cuidar (baixa manutenção)' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Espécies fáceis de cuidar encontradas', 
-    type: [Species] 
-  })
-  findEasyCareSpecies(): Promise<Species[]> {
-    return this.speciesService.findEasyCareSpecies();
   }
 
   @Get(':id')
@@ -200,7 +122,7 @@ export class SpeciesController {
   })
   @ApiResponse({ 
     status: HttpStatus.BAD_REQUEST, 
-    description: 'Dados inválidos fornecidos ou nome científico duplicado' 
+    description: 'Dados inválidos fornecidos ou nome duplicado' 
   })
   update(
     @Param('id', ParseUUIDPipe) id: string,

@@ -67,6 +67,15 @@ export default function TabsLayout() {
     <PaperProvider theme={theme}>
       <Tabs screenOptions={tabScreenOptions}>
         <Tabs.Screen
+          name="dashboard/index"
+          options={{
+            title: 'Dashboard',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="dashboard" size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="plants/index"
           options={{
             title: 'Plantas',
@@ -81,15 +90,6 @@ export default function TabsLayout() {
             title: 'Espécies',
             tabBarIcon: ({ color }: { color: string }) => (
               <MaterialIcons name="category" size={24} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="dashboard/index"
-          options={{
-            title: 'Dashboard',
-            tabBarIcon: ({ color }: { color: string }) => (
-              <MaterialIcons name="dashboard" size={24} color={color} />
             ),
           }}
         />

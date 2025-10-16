@@ -8,9 +8,10 @@ import {
   Delete, 
   ParseUUIDPipe,
   HttpStatus,
-  HttpCode 
+  HttpCode,
+  Query 
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { PlantsService } from './plants.service';
 import { CreatePlantDto } from './dto/create-plant.dto';
 import { UpdatePlantDto } from './dto/update-plant.dto';
@@ -42,7 +43,7 @@ export class PlantsController {
   @Get()
   @ApiOperation({ 
     summary: 'Listar todas as plantas',
-    description: 'Retorna uma lista paginada de todas as plantas cadastradas' 
+    description: 'Retorna uma lista de todas as plantas cadastradas' 
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -51,6 +52,44 @@ export class PlantsController {
   })
   findAll(): Promise<Plant[]> {
     return this.plantsService.findAll();
+  }
+
+  @Get('location/:locationId')
+  @ApiOperation({ 
+    summary: 'Buscar plantas por localização',
+    description: 'Retorna plantas de uma localização específica' 
+  })
+  @ApiParam({ 
+    name: 'locationId', 
+    description: 'UUID da localização',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Plantas encontradas', 
+    type: [Plant] 
+  })
+  findByLocation(@Param('locationId', ParseUUIDPipe) locationId: string): Promise<Plant[]> {
+    return this.plantsService.findByLocation(locationId);
+  }
+
+  @Get('species/:speciesId')
+  @ApiOperation({ 
+    summary: 'Buscar plantas por espécie',
+    description: 'Retorna plantas de uma espécie específica' 
+  })
+  @ApiParam({ 
+    name: 'speciesId', 
+    description: 'UUID da espécie',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Plantas encontradas', 
+    type: [Plant] 
+  })
+  findBySpecies(@Param('speciesId', ParseUUIDPipe) speciesId: string): Promise<Plant[]> {
+    return this.plantsService.findBySpecies(speciesId);
   }
 
   @Get(':id')

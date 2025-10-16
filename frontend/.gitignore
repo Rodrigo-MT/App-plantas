@@ -1,5 +1,18 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+# ⚠️  NOTA SOBRE ARQUIVOS .env
+# =============================
+# Os arquivos .env NÃO estão sendo ignorados intencionalmente porque:
+# 1. Este é um projeto educacional/demonstração
+# 2. As variáveis contêm apenas configurações de desenvolvimento
+# 3. Não há dados sensíveis (tokens, senhas, chaves de API)
+# 4. Facilita o setup para novos desenvolvedores
+#
+# ⚠️  PARA PROJETOS DE PRODUÇÃO:
+# - Remova .env do gitignore abaixo
+# - Crie um .env.example com estrutura
+# - Nunca commit .env com dados sensíveis
+
 # dependencies
 node_modules/
 
@@ -30,8 +43,11 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# ⚠️  ARQUIVOS .env LOCAIS (com dados sensíveis)
+# Estes DEVEM ser ignorados:
 .env*.local
+.env.production
+.env.staging
 
 # typescript
 *.tsbuildinfo
@@ -41,3 +57,13 @@ app-example
 # generated native folders
 /ios
 /android
+
+# 📁 BACKEND (se estiver no mesmo repositório)
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/*.log
+
+# 🗄️  Banco de dados (desenvolvimento)
+*.sqlite
+*.db

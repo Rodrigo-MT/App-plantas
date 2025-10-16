@@ -15,27 +15,27 @@ export class Plant {
   @Column()
   name: string;
 
-  @ApiPropertyOptional({ description: 'URL da imagem da planta', example: 'https://exemplo.com/planta.jpg' })
-  @Column({ nullable: true })
-  imageUrl: string;
+  @ApiProperty({ description: 'ID da espécie', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Column()
+  speciesId: string;
+
+  @ApiProperty({ description: 'ID da localização', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Column()
+  locationId: string;
+
+  @ApiProperty({ description: 'Data de compra/plantio', example: '2024-01-15' })
+  @Column({ type: 'date' })
+  purchaseDate: Date;
 
   @ApiPropertyOptional({ description: 'Observações sobre a planta', example: 'Planta que precisa de sol direto' })
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes?: string;
 
-  @ApiProperty({ 
-    description: 'Status de saúde da planta', 
-    example: 'healthy',
-    enum: ['healthy', 'needs_care', 'sick']
-  })
-  @Column({ default: 'healthy' })
-  healthStatus: string;
+  @ApiPropertyOptional({ description: 'URL da foto da planta', example: 'https://exemplo.com/planta.jpg' })
+  @Column({ nullable: true })
+  photo?: string;
 
-  @ApiProperty({ description: 'Data de plantio', example: '2024-01-15' })
-  @Column({ type: 'date' })
-  plantingDate: Date;
-
-  // Relações
+  // Relações (mantidas para consultas relacionadas se necessário)
   @ApiProperty({ type: () => Species, description: 'Espécie da planta' })
   @ManyToOne(() => Species, (species) => species.plants)
   species: Species;

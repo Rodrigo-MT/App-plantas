@@ -51,16 +51,57 @@ export class CareLogsController {
     description: 'Filtrar por ID da planta',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
+  @ApiQuery({ 
+    name: 'type', 
+    required: false,
+    description: 'Filtrar por tipo de cuidado',
+    example: 'watering',
+    enum: ['watering', 'fertilizing', 'pruning', 'repotting', 'cleaning', 'other']
+  })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de logs retornada com sucesso', 
     type: [CareLog] 
   })
-  findAll(@Query('plantId') plantId?: string): Promise<CareLog[]> {
+  findAll(
+    @Query('plantId') plantId?: string,
+    @Query('type') type?: string,
+  ): Promise<CareLog[]> {
     if (plantId) {
       return this.careLogsService.findByPlantId(plantId);
     }
+    if (type) {
+      return this.careLogsService.findByType(type);
+    }
     return this.careLogsService.findAll();
+  }
+
+  @Get('recent')
+  @ApiOperation({ 
+    summary: 'Logs recentes',
+    description: 'Retorna logs dos últimos 30 dias' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Logs recentes encontrados', 
+    type: [CareLog] 
+  })
+  findRecent(): Promise<CareLog[]> {
+    return this.careLogsService.findRecent();
+  }
+
+  @Get('successful')
+  @ApiOperation({ 
+    summary: 'Logs bem-sucedidos',
+    description: 'Retorna apenas os cuidados realizados com sucesso' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Logs bem-sucedidos encontrados', 
+    type: [CareLog] 
+  })
+  findSuccessful(): Promise<CareLog[]> {
+    return this.careLogsService.findSuccessful();
   }
 
   @Get('stats')

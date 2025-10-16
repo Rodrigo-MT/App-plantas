@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Species } from './entities/species.entity';
@@ -6,11 +6,83 @@ import { CreateSpeciesDto } from './dto/create-species.dto';
 import { UpdateSpeciesDto } from './dto/update-species.dto';
 
 @Injectable()
-export class SpeciesService {
+export class SpeciesService implements OnModuleInit {
   constructor(
     @InjectRepository(Species)
     private speciesRepository: Repository<Species>,
   ) {}
+
+  /**
+   * Executado automaticamente quando o módulo é inicializado
+   */
+  async onModuleInit() {
+    await this.seedDefaultSpecies();
+  }
+
+  /**
+   * Cria espécies padrão se não existirem
+   */
+  private async seedDefaultSpecies(): Promise<void> {
+    try {
+      const existingCount = await this.speciesRepository.count();
+      
+      if (existingCount === 0) {
+        console.log('🌱 Creating default species...');
+        
+        const defaultSpecies = [
+          {
+            name: 'Monstera deliciosa',
+            commonName: 'Costela de Adão',
+            description: 'Planta tropical com folhas grandes e recortadas.',
+            careInstructions: 'Luz indireta, rega moderada.',
+            idealConditions: 'Sol parcial, umidade média.',
+            photo: 'https://example.com/monstera.jpg',
+          },
+          {
+            name: 'Ficus lyrata',
+            commonName: 'Figueira-lira',
+            description: 'Planta com folhas grandes em forma de lira.',
+            careInstructions: 'Luz brilhante, rega quando o solo estiver seco.',
+            idealConditions: 'Sol pleno, umidade alta.',
+            photo: 'https://example.com/ficus-lyrata.jpg',
+          },
+          {
+            name: 'Sansevieria trifasciata',
+            commonName: 'Espada-de-são-jorge',
+            description: 'Planta resistente com folhas eretas e pontiagudas.',
+            careInstructions: 'Luz indireta, pouca rega.',
+            idealConditions: 'Sol ou sombra, tolerante à seca.',
+            photo: 'https://example.com/sansevieria.jpg',
+          },
+          {
+            name: 'Epipremnum aureum',
+            commonName: 'Jiboia',
+            description: 'Planta trepadeira de fácil cultivo e crescimento rápido.',
+            careInstructions: 'Luz indireta, rega moderada.',
+            idealConditions: 'Meia-sombra, solo bem drenado.',
+            photo: 'https://example.com/jiboia.jpg',
+          },
+          {
+            name: 'Zamioculcas zamiifolia',
+            commonName: 'Zamioculca',
+            description: 'Planta muito resistente com folhas brilhantes e carnudas.',
+            careInstructions: 'Luz indireta, pouca rega.',
+            idealConditions: 'Sombra a meia-sombra, solo seco.',
+            photo: 'https://example.com/zamioculca.jpg',
+          }
+        ];
+
+        const speciesToCreate = this.speciesRepository.create(defaultSpecies);
+        await this.speciesRepository.save(speciesToCreate);
+        
+        console.log(`✅ Created ${speciesToCreate.length} default species`);
+      } else {
+        console.log(`✅ Species already exist in database (${existingCount} records)`);
+      }
+    } catch (error) {
+      console.error('❌ Error creating default species:', error);
+    }
+  }
 
   /**
    * Cria uma nova espécie no sistema
@@ -19,13 +91,13 @@ export class SpeciesService {
    */
   async create(createSpeciesDto: CreateSpeciesDto): Promise<Species> {
     try {
-      // Verifica se já existe uma espécie com o mesmo nome científico
+      // Verifica se já existe uma espécie com o mesmo nome
       const existingSpecies = await this.speciesRepository.findOne({
-        where: { scientificName: createSpeciesDto.scientificName }
+        where: { name: createSpeciesDto.name }
       });
 
       if (existingSpecies) {
-        throw new BadRequestException('Já existe uma espécie com este nome científico');
+        throw new BadRequestException('Já existe uma espécie com este nome');
       }
 
       const species = this.speciesRepository.create(createSpeciesDto);
@@ -39,52 +111,24 @@ export class SpeciesService {
   }
 
   /**
-   * Retorna todas as espécies com suas relações
-   * @returns Lista de espécies com plantas associadas
+   * Retorna todas as espécies
+   * @returns Lista de espécies
    */
   async findAll(): Promise<Species[]> {
     return await this.speciesRepository.find({
-      relations: ['plants'],
       order: { name: 'ASC' }, // Ordena por nome alfabeticamente
-    });
-  }
-
-  /**
-   * Busca espécies por requisitos de luz
-   * @param lightRequirements Requisitos de luz (low, medium, high)
-   * @returns Espécies com os requisitos especificados
-   */
-  async findByLightRequirements(lightRequirements: string): Promise<Species[]> {
-    return await this.speciesRepository.find({
-      where: { lightRequirements },
-      relations: ['plants'],
-      order: { name: 'ASC' },
-    });
-  }
-
-  /**
-   * Busca espécies por frequência de rega
-   * @param waterFrequency Frequência de rega (daily, weekly, biweekly, monthly)
-   * @returns Espécies com a frequência especificada
-   */
-  async findByWaterFrequency(waterFrequency: string): Promise<Species[]> {
-    return await this.speciesRepository.find({
-      where: { waterFrequency },
-      relations: ['plants'],
-      order: { name: 'ASC' },
     });
   }
 
   /**
    * Busca uma espécie específica pelo ID
    * @param id UUID da espécie
-   * @returns Espécie encontrada com plantas associadas
+   * @returns Espécie encontrada
    * @throws NotFoundException se a espécie não existir
    */
   async findOne(id: string): Promise<Species> {
     const species = await this.speciesRepository.findOne({
       where: { id },
-      relations: ['plants'],
     });
 
     if (!species) {
@@ -95,14 +139,13 @@ export class SpeciesService {
   }
 
   /**
-   * Busca uma espécie pelo nome científico
-   * @param scientificName Nome científico da espécie
+   * Busca uma espécie pelo nome
+   * @param name Nome da espécie
    * @returns Espécie encontrada
    */
-  async findByScientificName(scientificName: string): Promise<Species | null> {
+  async findByName(name: string): Promise<Species | null> {
     return await this.speciesRepository.findOne({
-      where: { scientificName },
-      relations: ['plants'],
+      where: { name },
     });
   }
 
@@ -116,11 +159,11 @@ export class SpeciesService {
     const species = await this.findOne(id); // Valida se a espécie existe
     
     try {
-      // Se estiver atualizando o nome científico, verifica duplicata
-      if (updateSpeciesDto.scientificName && updateSpeciesDto.scientificName !== species.scientificName) {
-        const existingSpecies = await this.findByScientificName(updateSpeciesDto.scientificName);
+      // Se estiver atualizando o nome, verifica duplicata
+      if (updateSpeciesDto.name && updateSpeciesDto.name !== species.name) {
+        const existingSpecies = await this.findByName(updateSpeciesDto.name);
         if (existingSpecies) {
-          throw new BadRequestException('Já existe uma espécie com este nome científico');
+          throw new BadRequestException('Já existe uma espécie com este nome');
         }
       }
 
@@ -143,9 +186,16 @@ export class SpeciesService {
     const species = await this.findOne(id);
     
     // Verifica se a espécie tem plantas associadas
-    if (species.plants && species.plants.length > 0) {
+    const plantsCount = await this.speciesRepository
+      .createQueryBuilder('species')
+      .leftJoin('species.plants', 'plant')
+      .where('species.id = :id', { id })
+      .select('COUNT(plant.id)', 'count')
+      .getRawOne();
+
+    if (parseInt(plantsCount.count) > 0) {
       throw new BadRequestException(
-        `Não é possível remover a espécie '${species.name}' pois existem ${species.plants.length} plantas associadas a ela.`
+        `Não é possível remover a espécie '${species.name}' pois existem ${plantsCount.count} plantas associadas a ela.`
       );
     }
 
@@ -154,57 +204,6 @@ export class SpeciesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Espécie com ID ${id} não encontrada`);
     }
-  }
-
-  /**
-   * Estatísticas de espécies por requisitos de luz
-   * @returns Contagem de espécies por requisitos de luz
-   */
-  async getLightRequirementsStats(): Promise<{ lightRequirements: string; count: number }[]> {
-    return await this.speciesRepository
-      .createQueryBuilder('species')
-      .select('species.lightRequirements', 'lightRequirements')
-      .addSelect('COUNT(species.id)', 'count')
-      .groupBy('species.lightRequirements')
-      .getRawMany();
-  }
-
-  /**
-   * Estatísticas de espécies por frequência de rega
-   * @returns Contagem de espécies por frequência de rega
-   */
-  async getWaterFrequencyStats(): Promise<{ waterFrequency: string; count: number }[]> {
-    return await this.speciesRepository
-      .createQueryBuilder('species')
-      .select('species.waterFrequency', 'waterFrequency')
-      .addSelect('COUNT(species.id)', 'count')
-      .groupBy('species.waterFrequency')
-      .getRawMany();
-  }
-
-  /**
-   * Busca espécies que são fáceis de cuidar (baixa frequência de rega e luz média/baixa)
-   * @returns Espécies consideradas fáceis de cuidar
-   */
-  async findEasyCareSpecies(): Promise<Species[]> {
-    return await this.speciesRepository.find({
-      where: [
-        { 
-          waterFrequency: 'weekly', 
-          lightRequirements: 'low' 
-        },
-        { 
-          waterFrequency: 'biweekly', 
-          lightRequirements: 'low' 
-        },
-        { 
-          waterFrequency: 'biweekly', 
-          lightRequirements: 'medium' 
-        }
-      ],
-      relations: ['plants'],
-      order: { waterFrequency: 'ASC', name: 'ASC' },
-    });
   }
 
   /**
@@ -221,10 +220,23 @@ export class SpeciesService {
    * @returns true se a espécie pode ser removida
    */
   async canBeRemoved(id: string): Promise<{ canBeRemoved: boolean; plantCount: number }> {
-    const species = await this.findOne(id);
+    const species = await this.speciesRepository
+      .createQueryBuilder('species')
+      .leftJoin('species.plants', 'plant')
+      .where('species.id = :id', { id })
+      .select(['species.id', 'COUNT(plant.id) as plantCount'])
+      .groupBy('species.id')
+      .getRawOne();
+
+    if (!species) {
+      throw new NotFoundException(`Espécie com ID ${id} não encontrada`);
+    }
+
+    const plantCount = parseInt(species.plantCount) || 0;
+    
     return {
-      canBeRemoved: !species.plants || species.plants.length === 0,
-      plantCount: species.plants ? species.plants.length : 0
+      canBeRemoved: plantCount === 0,
+      plantCount
     };
   }
 }

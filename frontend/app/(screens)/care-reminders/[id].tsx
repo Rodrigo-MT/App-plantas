@@ -150,6 +150,7 @@ export default function CareReminderDetailScreen() {
             control={control}
             name="lastDone"
             label="Última Realização"
+            allowFutureDates={true}
           />
           <HelperText type="error" visible={!!errors.lastDone}>
             {errors.lastDone?.message ?? ''}
@@ -158,6 +159,7 @@ export default function CareReminderDetailScreen() {
             control={control}
             name="nextDue"
             label="Próxima Data"
+            allowFutureDates={true}
           />
           <HelperText type="error" visible={!!errors.nextDue}>
             {errors.nextDue?.message ?? ''}

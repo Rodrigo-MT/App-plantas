@@ -51,14 +51,27 @@ export class CareRemindersController {
     description: 'Filtrar por ID da planta',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
+  @ApiQuery({ 
+    name: 'type', 
+    required: false,
+    description: 'Filtrar por tipo de cuidado',
+    example: 'watering',
+    enum: ['watering', 'fertilizing', 'pruning', 'sunlight', 'other']
+  })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de lembretes retornada com sucesso', 
     type: [CareReminder] 
   })
-  findAll(@Query('plantId') plantId?: string): Promise<CareReminder[]> {
+  findAll(
+    @Query('plantId') plantId?: string,
+    @Query('type') type?: string,
+  ): Promise<CareReminder[]> {
     if (plantId) {
       return this.careRemindersService.findByPlantId(plantId);
+    }
+    if (type) {
+      return this.careRemindersService.findByType(type);
     }
     return this.careRemindersService.findAll();
   }
@@ -89,6 +102,20 @@ export class CareRemindersController {
   })
   findUpcoming(): Promise<CareReminder[]> {
     return this.careRemindersService.findUpcoming();
+  }
+
+  @Get('active')
+  @ApiOperation({ 
+    summary: 'Lembretes ativos',
+    description: 'Retorna todos os lembretes ativos' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Lembretes ativos encontrados', 
+    type: [CareReminder] 
+  })
+  findActive(): Promise<CareReminder[]> {
+    return this.careRemindersService.findActive();
   }
 
   @Get(':id')
@@ -142,6 +169,29 @@ export class CareRemindersController {
     @Body() updateCareReminderDto: UpdateCareReminderDto,
   ): Promise<CareReminder> {
     return this.careRemindersService.update(id, updateCareReminderDto);
+  }
+
+  @Patch(':id/mark-done')
+  @ApiOperation({ 
+    summary: 'Marcar lembrete como concluído',
+    description: 'Marca um lembrete como feito e atualiza a próxima data' 
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'UUID do lembrete',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Lembrete marcado como concluído', 
+    type: CareReminder 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Lembrete não encontrado' 
+  })
+  markAsDone(@Param('id', ParseUUIDPipe) id: string): Promise<CareReminder> {
+    return this.careRemindersService.markAsDone(id);
   }
 
   @Delete(':id')

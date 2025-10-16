@@ -9,24 +9,27 @@ export class UpdateLocationDto extends PartialType(CreateLocationDto) {
   @ApiPropertyOptional({ 
     description: 'Tipo de ambiente',
     example: 'outdoor',
-    enum: ['indoor', 'outdoor', 'greenhouse']
+    enum: ['indoor', 'outdoor', 'balcony', 'garden', 'terrace']
   })
   type?: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Nível de luz solar',
+    example: 'full',
+    enum: ['full', 'partial', 'shade']
+  })
+  sunlight?: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Nível de umidade',
+    example: 'high',
+    enum: ['low', 'medium', 'high']
+  })
+  humidity?: string;
 
   @ApiPropertyOptional({ description: 'Descrição da localização', example: 'Nova descrição' })
   description?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Nível de luz no local',
-    example: 'medium',
-    enum: ['low', 'medium', 'high']
-  })
-  lightLevel?: string;
-
-  @ApiPropertyOptional({ 
-    description: 'Nível de umidade no local',
-    example: 'low',
-    enum: ['low', 'medium', 'high']
-  })
-  humidity?: string;
+  @ApiPropertyOptional({ description: 'URL da foto da localização', example: 'https://exemplo.com/nova-foto.jpg' })
+  photo?: string;
 }

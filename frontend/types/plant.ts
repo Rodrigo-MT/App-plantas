@@ -8,4 +8,8 @@ export interface Plant {
   photo?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  
+  // Campos opcionais que podem vir do backend com relações
+  species?: any; // Para compatibilidade com dados relacionados
+  location?: any; // Para compatibilidade com dados relacionados
 }
