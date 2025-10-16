@@ -6,4 +6,6 @@ export interface Plant {
   purchaseDate: Date;
   notes?: string;
   photo?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

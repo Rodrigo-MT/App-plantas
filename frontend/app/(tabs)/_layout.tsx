@@ -1,91 +1,132 @@
+import { Quicksand_400Regular, Quicksand_600SemiBold, Quicksand_700Bold, useFonts } from '@expo-google-fonts/quicksand';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import { Tabs } from 'expo-router';
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Provider as PaperProvider, Text } from 'react-native-paper';
+import { ActivityIndicator, Card, Provider as PaperProvider, Text } from 'react-native-paper';
+import theme from '../../constants/theme';
 
+/**
+ * Layout de navegação por abas do aplicativo, com carregamento de fontes e tema personalizado.
+ */
 export default function TabsLayout() {
-  const [notificationPermission, setNotificationPermission] = useState(false);
+  const [fontsLoaded, fontsError] = useFonts({
+    Quicksand_400Regular,
+    Quicksand_600SemiBold,
+    Quicksand_700Bold,
+  });
 
-  const requestPermissions = async () => {
-    const { status } = await Notifications.requestPermissionsAsync();
-    setNotificationPermission(status === 'granted');
+  if (!fontsLoaded && !fontsError) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.loadingText}>Carregando...</Text>
+          </Card.Content>
+        </Card>
+      </View>
+    );
+  }
+
+  if (fontsError) {
+    console.error('Error loading fonts:', fontsError);
+    // TODO: Exibir feedback visual (ex.: SnackBar)
+    return (
+      <View style={styles.loadingContainer}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={styles.errorText}>Erro ao carregar fontes.</Text>
+          </Card.Content>
+        </Card>
+      </View>
+    );
+  }
+
+  const tabScreenOptions = {
+    headerShown: false,
+    // ✅ CORREÇÃO: Cores das tabs
+    tabBarActiveTintColor: theme.colors.primary, // VERDE CLARO para tab ativa
+    tabBarInactiveTintColor: theme.colors.onSurface, // VERDE ESCURO para tab inativa
+    tabBarStyle: {
+      backgroundColor: theme.colors.surface, // FUNDO BRANCO para contraste
+      borderTopWidth: 0,
+      elevation: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    tabBarLabelStyle: {
+      // ✅ CORREÇÃO: Usar fontes que existem no tema
+      fontFamily: theme.fonts.labelSmall.fontFamily,
+      fontSize: 12,
+    },
   };
 
   return (
-    <PaperProvider>
-      {!notificationPermission && (
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>
-            Permissões de notificação são necessárias para lembretes de cuidado.
-          </Text>
-          <Button mode="contained" onPress={requestPermissions} style={styles.permissionButton}>
-            Permitir Notificações
-          </Button>
-        </View>
-      )}
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: '#4CAF50',
-          tabBarStyle: { backgroundColor: '#ffffff' },
-        }}
-      >
+    <PaperProvider theme={theme}>
+      <Tabs screenOptions={tabScreenOptions}>
         <Tabs.Screen
           name="plants/index"
           options={{
             title: 'Plantas',
-            tabBarIcon: ({ color }) => <MaterialIcons name="local-florist" size={24} color={color} />,
-            href: '/plants',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="local-florist" size={24} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="species/index"
           options={{
             title: 'Espécies',
-            tabBarIcon: ({ color }) => <MaterialIcons name="category" size={24} color={color} />,
-            href: '/species',
-          }}
-        />
-        <Tabs.Screen
-          name="locations/index"
-          options={{
-            title: 'Locais',
-            tabBarIcon: ({ color }) => <MaterialIcons name="place" size={24} color={color} />,
-            href: '/locations',
-          }}
-        />
-        <Tabs.Screen
-          name="care-tasks/index"
-          options={{
-            title: 'Tarefas',
-            tabBarIcon: ({ color }) => <MaterialIcons name="event" size={24} color={color} />,
-            href: '/care-tasks',
-          }}
-        />
-        <Tabs.Screen
-          name="care-logs/index"
-          options={{
-            title: 'Logs',
-            tabBarIcon: ({ color }) => <MaterialIcons name="history" size={24} color={color} />,
-            href: '/care-logs',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="category" size={24} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="dashboard/index"
           options={{
             title: 'Dashboard',
-            tabBarIcon: ({ color }) => <MaterialIcons name="dashboard" size={24} color={color} />,
-            href: '/dashboard',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="dashboard" size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="care-reminders/index"
+          options={{
+            title: 'Lembretes',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="notifications" size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="care-logs/index"
+          options={{
+            title: 'Histórico',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="history" size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="locations/index"
+          options={{
+            title: 'Locais',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="place" size={24} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="settings/index"
           options={{
             title: 'Configurações',
-            tabBarIcon: ({ color }) => <MaterialIcons name="settings" size={24} color={color} />,
-            href: '/settings',
+            tabBarIcon: ({ color }: { color: string }) => (
+              <MaterialIcons name="settings" size={24} color={color} />
+            ),
           }}
         />
       </Tabs>
@@ -94,18 +135,35 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  permissionContainer: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+  },
+  card: {
     padding: 16,
-    backgroundColor: '#fff3cd',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ffeeba',
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface, // ✅ CORREÇÃO: usar surface
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  permissionText: {
+  loadingText: {
+    marginTop: 16,
     fontSize: 16,
-    color: '#856404',
-    marginBottom: 8,
+    // ✅ CORREÇÃO: Usar fontes que existem
+    fontFamily: theme.fonts.bodyMedium.fontFamily,
+    color: theme.colors.text,
+    textAlign: 'center',
   },
-  permissionButton: {
-    backgroundColor: '#4CAF50',
+  errorText: {
+    fontSize: 16,
+    // ✅ CORREÇÃO: Usar fontes que existem
+    fontFamily: theme.fonts.bodyMedium.fontFamily,
+    color: theme.colors.error,
+    textAlign: 'center',
   },
 });

@@ -1,37 +1,24 @@
 import { Controller } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
+import { MaskedTextInput } from 'react-native-mask-text';
 import { Text, TextInput } from 'react-native-paper';
 import theme from '../constants/theme';
 
 /**
- * Campo de formulário genérico integrado com react-hook-form.
+ * Campo de entrada mascarada integrado com react-hook-form.
  * @param control Controlador do react-hook-form.
  * @param name Nome do campo no formulário.
  * @param label Rótulo do campo.
- * @param multiline Indica se o campo suporta múltiplas linhas.
- * @param numberOfLines Número de linhas para campos multiline.
- * @param keyboardType Tipo de teclado (default, numeric, etc.).
- * @param secureTextEntry Indica se o campo é para entrada segura (ex.: senha).
+ * @param mask Máscara para formatação do texto (ex.: '999.999.999-99').
  */
-interface FormFieldProps {
+interface MaskedInputProps {
   control: any;
   name: string;
   label: string;
-  multiline?: boolean;
-  numberOfLines?: number;
-  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
-  secureTextEntry?: boolean;
+  mask: string;
 }
 
-export default function FormField({
-  control,
-  name,
-  label,
-  multiline = false,
-  numberOfLines = 1,
-  keyboardType = 'default',
-  secureTextEntry = false,
-}: FormFieldProps) {
+export default function MaskedInput({ control, name, label, mask }: MaskedInputProps) {
   return (
     <Controller
       control={control}
@@ -41,17 +28,22 @@ export default function FormField({
           <TextInput
             label={label}
             value={value}
-            onChangeText={onChange}
             onBlur={onBlur}
+            onChangeText={onChange}
             error={!!error}
-            multiline={multiline}
-            numberOfLines={numberOfLines}
-            keyboardType={keyboardType}
-            secureTextEntry={secureTextEntry}
             mode="outlined"
             outlineColor={theme.colors.primary}
             activeOutlineColor={theme.colors.secondary}
-            style={[styles.input, multiline && styles.multilineInput]}
+            render={(props) => (
+              <MaskedTextInput
+                {...props}
+                mask={mask}
+                onChangeText={(text, rawText) => {
+                  onChange(text);
+                }}
+                style={styles.input}
+              />
+            )}
             theme={{ colors: { background: theme.colors.background } }}
           />
           {error && <Text style={styles.errorText}>{error.message}</Text>}
@@ -66,11 +58,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    backgroundColor: theme.colors.background,
     fontFamily: theme.fonts.default.fontFamily,
-  },
-  multilineInput: {
-    height: 100,
+    fontSize: 16,
+    color: theme.colors.text,
   },
   errorText: {
     color: theme.colors.error,

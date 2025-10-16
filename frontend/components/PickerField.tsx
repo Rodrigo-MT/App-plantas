@@ -1,7 +1,15 @@
 import { Controller } from 'react-hook-form';
 import { StyleSheet, Text, View } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import theme from '../constants/theme';
 
+/**
+ * Campo de seleção (dropdown) integrado com react-hook-form.
+ * @param control Controlador do react-hook-form.
+ * @param name Nome do campo no formulário.
+ * @param label Rótulo do campo.
+ * @param items Itens disponíveis para seleção (label e value).
+ */
 interface PickerFieldProps {
   control: any;
   name: string;
@@ -16,14 +24,17 @@ export default function PickerField({ control, name, label, items }: PickerField
       <Controller
         control={control}
         name={name}
-        render={({ field: { onChange, value } }) => (
-          <RNPickerSelect
-            onValueChange={onChange}
-            value={value || ''}
-            items={items}
-            style={pickerSelectStyles}
-            placeholder={{ label: `Selecione ${label.toLowerCase()}`, value: '' }}
-          />
+        render={({ field: { onChange, value }, fieldState: { error } }) => (
+          <>
+            <RNPickerSelect
+              onValueChange={onChange}
+              value={value || ''}
+              items={items}
+              style={pickerSelectStyles}
+              placeholder={{ label: `Selecione ${label.toLowerCase()}`, value: '' }}
+            />
+            {error && <Text style={styles.errorText}>{error.message}</Text>}
+          </>
         )}
       />
     </View>
@@ -37,7 +48,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     marginBottom: 8,
-    color: '#333',
+    color: theme.colors.text,
+    fontFamily: theme.fonts.default.fontFamily,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: 12,
+    marginTop: 4,
+    fontFamily: theme.fonts.default.fontFamily,
   },
 });
 
@@ -46,16 +64,24 @@ const pickerSelectStyles = {
     fontSize: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    color: '#333',
+    borderColor: theme.colors.primary,
+    borderRadius: 8,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.default.fontFamily,
+    backgroundColor: theme.colors.background,
   },
   inputAndroid: {
     fontSize: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    color: '#333',
+    borderColor: theme.colors.primary,
+    borderRadius: 8,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.default.fontFamily,
+    backgroundColor: theme.colors.background,
+  },
+  placeholder: {
+    color: theme.colors.text,
+    fontFamily: theme.fonts.default.fontFamily,
   },
 };

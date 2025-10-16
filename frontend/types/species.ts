@@ -1,9 +1,11 @@
 export interface Species {
   id: string;
-  name: string; // Scientific name
-  commonName?: string; // Common name
+  name: string;
+  commonName?: string;
   description?: string;
   careInstructions?: string;
   idealConditions?: string;
   photo?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
