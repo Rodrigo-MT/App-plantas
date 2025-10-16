@@ -1,10 +1,10 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { ActivityIndicator, Card, Text } from 'react-native-paper';
 import Header from '../../../components/Header';
-import theme from '../../../constants/theme';
+import { useTheme } from '../../../constants/theme'; // ✅ useTheme
 import { useCareReminders } from '../../../hooks/useCareReminders';
 import { useLocations } from '../../../hooks/useLocations';
 import { usePlants } from '../../../hooks/usePlants';
@@ -24,15 +24,14 @@ export default function DashboardScreen() {
   const { careReminders, loadCareReminders } = useCareReminders();
   const { locations, loadLocations } = useLocations();
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme(); // ✅ Tema dinâmico
 
-  // Carrega todos os dados quando a tela ganha foco
   const refreshData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([loadPlants(), loadSpecies(), loadCareReminders(), loadLocations()]);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      // TODO: Exibir feedback visual (ex.: SnackBar)
     } finally {
       setLoading(false);
     }
@@ -42,10 +41,6 @@ export default function DashboardScreen() {
     refreshData();
   }, [refreshData]));
 
-  /**
-   * Calcula a distribuição de plantas por local.
-   * @returns Objeto com contagem de plantas por locationId.
-   */
   const plantsByLocation = plants?.reduce((acc: Record<string, number>, plant: Plant) => {
     if (plant?.locationId) {
       acc[plant.locationId] = (acc[plant.locationId] || 0) + 1;
@@ -53,10 +48,6 @@ export default function DashboardScreen() {
     return acc;
   }, {}) || {};
 
-  /**
-   * Filtra lembretes atrasados.
-   * @returns Array de lembretes com nextDue no passado e isActive true.
-   */
   const overdueReminders = careReminders?.filter((reminder: CareReminder) => {
     if (!reminder?.nextDue || !reminder.isActive) return false;
     try {
@@ -66,10 +57,6 @@ export default function DashboardScreen() {
     }
   }) || [];
 
-  /**
-   * Filtra lembretes próximos (em até 3 dias).
-   * @returns Array de lembretes com nextDue em até 3 dias e isActive true.
-   */
   const upcomingReminders = careReminders?.filter((reminder: CareReminder) => {
     if (!reminder?.nextDue || !reminder.isActive) return false;
     try {
@@ -82,21 +69,11 @@ export default function DashboardScreen() {
     }
   }) || [];
 
-  /**
-   * Obtém o nome do local com base no locationId.
-   * @param locationId - ID do local.
-   * @returns Nome do local ou fallback.
-   */
   const getLocationName = (locationId: string): string => {
     const location = locations?.find((l: Location) => l?.id === locationId);
     return location ? location.name : `Local ${locationId}`;
   };
 
-  /**
-   * Formata uma data com tratamento de erros.
-   * @param date - Data a ser formatada.
-   * @returns Data formatada ou mensagem de erro.
-   */
   const formatDateSafe = (date: any): string => {
     try {
       if (!date) return 'Data inválida';
@@ -107,11 +84,6 @@ export default function DashboardScreen() {
     }
   };
 
-  /**
-   * Calcula dias até a data de vencimento com tratamento de erros.
-   * @param date - Data a ser verificada.
-   * @returns Número de dias ou 0 em caso de erro.
-   */
   const getDaysUntilDueSafe = (date: any): number => {
     try {
       if (!date) return 0;
@@ -124,27 +96,171 @@ export default function DashboardScreen() {
     }
   };
 
-  // Dados para o gráfico de plantas por local
-  const chartData = Object.entries(plantsByLocation)
-    .filter(([_, count]) => count > 0)
-    .map(([locationId, count], index) => {
-      const colors = [
-        theme.colors.primary,
-        theme.colors.accent,
-        '#32c273', // Verde alternativo
-        '#28afd4', // Ciano alternativo
-        '#E6F4FE', // Azul claro
-      ];
-      return {
+  // Dados para o gráfico com cores dinâmicas
+  const chartData = useMemo(() => {
+    const colors = [
+      theme.colors.primary, // #32c273 (light) ou #7289DA (dark)
+      theme.colors.accent,
+      theme.colors.secondary, // Usando secondary do tema
+      theme.colors.onSurfaceVariant, // #666666 (light) ou #DBDBDB (dark)
+      theme.colors.text,
+    ];
+    return Object.entries(plantsByLocation)
+      .filter(([_, count]) => count > 0)
+      .map(([locationId, count], index) => ({
         name: getLocationName(locationId),
         population: count,
         color: colors[index % colors.length],
         legendFontColor: theme.colors.text,
         legendFontSize: 12,
-      };
-    });
+      }));
+  }, [plantsByLocation, theme]);
 
-  // Estado de carregamento
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background, // #F5F5F5 (light) ou #202225 (dark)
+    },
+    scrollContent: {
+      padding: 16,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    statCard: {
+      flex: 1,
+      marginHorizontal: 4,
+      alignItems: 'center',
+      borderRadius: 12,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    statCardContent: {
+      alignItems: 'center',
+      padding: 12,
+    },
+    statNumber: {
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      color: theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontFamily: theme.fonts.labelMedium.fontFamily,
+      color: theme.colors.onSurfaceVariant, // #666666 (light) ou #DBDBDB (dark)
+      textAlign: 'center',
+    },
+    chartCard: {
+      marginBottom: 16,
+      borderRadius: 12,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    chartTitle: {
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      color: theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    emptyChartText: {
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.onSurfaceVariant,
+      textAlign: 'center',
+      fontStyle: 'italic',
+    },
+    remindersCard: {
+      marginBottom: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.error, // Borda vermelha para atrasados
+    },
+    remindersTitle: {
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      color: theme.colors.error, // Vermelho para destaque
+      marginBottom: 12,
+    },
+    upcomingCard: {
+      marginBottom: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.primary, // Borda verde/azul para próximos
+    },
+    upcomingTitle: {
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      color: theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+      marginBottom: 12,
+    },
+    reminderItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.onSurfaceVariant, // Borda sutil
+    },
+    reminderInfo: {
+      flex: 1,
+    },
+    reminderType: {
+      fontFamily: theme.fonts.labelMedium.fontFamily,
+      color: theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+      marginBottom: 2,
+    },
+    reminderPlant: {
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.onSurfaceVariant, // #666666 (light) ou #DBDBDB (dark)
+    },
+    overdueText: {
+      fontFamily: theme.fonts.labelMedium.fontFamily,
+      color: theme.colors.error, // Vermelho para atrasados
+    },
+    upcomingText: {
+      fontFamily: theme.fonts.labelMedium.fontFamily,
+      color: theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+    },
+    emptyCard: {
+      marginBottom: 16,
+      borderRadius: 12,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    emptyTitle: {
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      color: theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    emptyText: {
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+      backgroundColor: theme.colors.background,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: theme.colors.text,
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+    },
+  }), [theme]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -206,7 +322,7 @@ export default function DashboardScreen() {
                   backgroundColor: theme.colors.surface,
                   backgroundGradientFrom: theme.colors.surface,
                   backgroundGradientTo: theme.colors.surface,
-                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  color: (opacity = 1) => theme.colors.onSurface, // #333333 (light) ou #FFFFFF (dark)
                   decimalPlaces: 0,
                 }}
                 accessor="population"
@@ -244,10 +360,10 @@ export default function DashboardScreen() {
                         {reminder?.type === 'watering'
                           ? '💧 Regar'
                           : reminder?.type === 'fertilizing'
-                          ? '🌱 Adubar'
-                          : reminder?.type === 'pruning'
-                          ? '✂️ Podar'
-                          : '☀️ Sol'}
+                            ? '🌱 Adubar'
+                            : reminder?.type === 'pruning'
+                              ? '✂️ Podar'
+                              : '☀️ Sol'}
                       </Text>
                       <Text variant="bodySmall" style={styles.reminderPlant}>
                         {plant?.name || 'Planta não encontrada'}
@@ -279,10 +395,10 @@ export default function DashboardScreen() {
                         {reminder?.type === 'watering'
                           ? '💧 Regar'
                           : reminder?.type === 'fertilizing'
-                          ? '🌱 Adubar'
-                          : reminder?.type === 'pruning'
-                          ? '✂️ Podar'
-                          : '☀️ Sol'}
+                            ? '🌱 Adubar'
+                            : reminder?.type === 'pruning'
+                              ? '✂️ Podar'
+                              : '☀️ Sol'}
                       </Text>
                       <Text variant="bodySmall" style={styles.reminderPlant}>
                         {plant?.name || 'Planta não encontrada'}
@@ -314,153 +430,3 @@ export default function DashboardScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    marginHorizontal: 4,
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  statCardContent: {
-    alignItems: 'center',
-    padding: 12,
-  },
-  statNumber: {
-    fontFamily: theme.fonts.titleMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.primary,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontFamily: theme.fonts.labelMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  chartCard: {
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  chartTitle: {
-    fontFamily: theme.fonts.titleMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.text,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  emptyChartText: {
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.onSurfaceVariant,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  remindersCard: {
-    marginBottom: 16,
-    backgroundColor: '#FFF3E0', // Cor de fundo para alertas
-    borderRadius: 12,
-    borderColor: '#FFB74D', // Cor da borda para alertas
-    borderWidth: 1,
-  },
-  remindersTitle: {
-    fontFamily: theme.fonts.titleMedium.fontFamily, // ✅ CORRIGIDO
-    color: '#E65100', // Cor do texto para alertas
-    marginBottom: 12,
-  },
-  upcomingCard: {
-    marginBottom: 16,
-    backgroundColor: '#E8F5E8', // Cor de fundo para informações
-    borderRadius: 12,
-    borderColor: '#81C784', // Cor da borda para informações
-    borderWidth: 1,
-  },
-  upcomingTitle: {
-    fontFamily: theme.fonts.titleMedium.fontFamily, // ✅ CORRIGIDO
-    color: '#2E7D32', // Cor do texto para informações
-    marginBottom: 12,
-  },
-  reminderItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  reminderInfo: {
-    flex: 1,
-  },
-  reminderType: {
-    fontFamily: theme.fonts.labelMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.text,
-    marginBottom: 2,
-  },
-  reminderPlant: {
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.onSurfaceVariant,
-  },
-  overdueText: {
-    fontFamily: theme.fonts.labelMedium.fontFamily, // ✅ CORRIGIDO
-    color: '#D32F2F', // Vermelho para atrasados
-  },
-  upcomingText: {
-    fontFamily: theme.fonts.labelMedium.fontFamily, // ✅ CORRIGIDO
-    color: '#2E7D32', // Verde para próximos
-  },
-  emptyCard: {
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  emptyTitle: {
-    fontFamily: theme.fonts.titleMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.primary,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO
-    color: theme.colors.onSurfaceVariant,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: theme.colors.background,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: theme.colors.text,
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO
-  },
-});

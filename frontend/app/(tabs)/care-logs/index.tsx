@@ -1,10 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Card, Text } from 'react-native-paper';
 import CustomButton from '../../../components/CustomButton';
 import Header from '../../../components/Header';
-import theme from '../../../constants/theme';
+import { useTheme } from '../../../constants/theme';
 import { useCareLogs } from '../../../hooks/useCareLogs';
 import { usePlants } from '../../../hooks/usePlants';
 import { CareLog } from '../../../types/careLog';
@@ -18,8 +18,73 @@ export default function CareLogsScreen() {
   const { plants } = usePlants();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
 
-  // Carrega registros de cuidados quando a tela ganha foco
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: theme.colors.background, // ✅ #F5F5F5 (light) ou #202225 (dark)
+    },
+    buttonContainer: {
+      marginTop: 16,
+      alignItems: 'flex-start',
+    },
+    button: {
+      marginBottom: 16,
+    },
+    card: {
+      marginBottom: 16,
+      borderRadius: 12,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    title: {
+      fontSize: 18,
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      color: theme.colors.primary, // ✅ Verde #32c273 (light) ou #7289DA (dark)
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.onSurfaceVariant, // ✅ Cinza #666666 (light) ou #DBDBDB (dark) para secundário
+      marginBottom: 4,
+    },
+    notes: {
+      fontSize: 12,
+      fontFamily: theme.fonts.bodySmall.fontFamily,
+      color: theme.colors.onSurfaceVariant,
+      marginTop: 4,
+      fontStyle: 'italic',
+    },
+    list: {
+      paddingBottom: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+      backgroundColor: theme.colors.background,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.text, // ✅ #333333 (light) ou #FFFFFF (dark)
+    },
+    emptyText: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.text,
+      textAlign: 'center',
+    },
+  }), [theme]);
+
   useFocusEffect(
     useCallback(() => {
       const fetchCareLogs = async () => {
@@ -28,7 +93,6 @@ export default function CareLogsScreen() {
           await loadCareLogs();
         } catch (error) {
           console.error('Error loading care logs:', error);
-          // TODO: Exibir feedback visual (ex.: SnackBar)
         } finally {
           setLoading(false);
         }
@@ -37,21 +101,11 @@ export default function CareLogsScreen() {
     }, [loadCareLogs])
   );
 
-  /**
-   * Obtém o nome da planta com base no plantId.
-   * @param plantId - ID da planta.
-   * @returns Nome da planta ou mensagem de erro.
-   */
   const getPlantName = (plantId: string): string => {
     const plant = plants.find((p: Plant) => p.id === plantId);
     return plant ? plant.name : 'Planta não encontrada';
   };
 
-  /**
-   * Obtém o ícone e texto correspondente ao tipo de cuidado.
-   * @param type - Tipo de cuidado (watering, fertilizing, etc.).
-   * @returns Ícone e texto formatados.
-   */
   const getCareTypeIcon = (type: string): string => {
     switch (type) {
       case 'watering':
@@ -69,16 +123,10 @@ export default function CareLogsScreen() {
     }
   };
 
-  /**
-   * Obtém o ícone correspondente ao status do cuidado.
-   * @param success - Indica se o cuidado foi bem-sucedido.
-   * @returns Ícone correspondente.
-   */
   const getStatusIcon = (success: boolean): string => {
     return success ? '✅' : '❌';
   };
 
-  // Estado de carregamento
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -97,6 +145,7 @@ export default function CareLogsScreen() {
           label="Registrar Cuidado"
           mode="contained"
           style={styles.button}
+          buttonColor={theme.colors.primary} // ✅ Verde ou azul do tema
         />
       </View>
       {careLogs.length === 0 ? (
@@ -110,10 +159,7 @@ export default function CareLogsScreen() {
           data={careLogs.sort((a: CareLog, b: CareLog) => new Date(b.date).getTime() - new Date(a.date).getTime())}
           keyExtractor={(item: CareLog) => item.id}
           renderItem={({ item }) => (
-            <Card
-              style={styles.card}
-              onPress={() => router.push(`/care-logs/${item.id}`)}
-            >
+            <Card style={styles.card} onPress={() => router.push(`/care-logs/${item.id}`)}>
               <Card.Content>
                 <Text style={styles.title} variant="headlineSmall">
                   {getCareTypeIcon(item.type)}
@@ -141,69 +187,3 @@ export default function CareLogsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: theme.colors.background,
-  },
-  buttonContainer: {
-    marginTop: 16,
-    alignItems: 'flex-start',
-  },
-  button: {
-    marginBottom: 16,
-  },
-  card: {
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface, // ✅ CORRIGIDO: usar surface para cards
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: theme.fonts.titleMedium.fontFamily, // ✅ CORRIGIDO: usar titleMedium
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO: usar bodyMedium
-    color: theme.colors.onSurfaceVariant, // ✅ CORRIGIDO: usar onSurfaceVariant para texto secundário
-    marginBottom: 4,
-  },
-  notes: {
-    fontSize: 12,
-    fontFamily: theme.fonts.bodySmall.fontFamily, // ✅ CORRIGIDO: usar bodySmall
-    color: theme.colors.onSurfaceVariant, // ✅ CORRIGIDO: usar onSurfaceVariant
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  list: {
-    paddingBottom: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: theme.colors.background,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: theme.colors.text,
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO: usar bodyMedium
-  },
-  emptyText: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO: usar bodyMedium
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-});

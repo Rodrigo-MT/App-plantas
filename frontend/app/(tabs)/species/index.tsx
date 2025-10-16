@@ -1,10 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, StyleSheet, View, Platform } from 'react-native';
 import { ActivityIndicator, Card, Text } from 'react-native-paper';
 import CustomButton from '../../../components/CustomButton';
 import Header from '../../../components/Header';
-import theme from '../../../constants/theme';
+import { useTheme } from '../../../constants/theme';
 import { useSpecies } from '../../../hooks/useSpecies';
 import { Species } from '../../../types/species';
 
@@ -15,8 +15,8 @@ export default function SpeciesScreen() {
   const { species, loadSpecies } = useSpecies();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
 
-  // Carrega espécies quando a tela ganha foco
   useFocusEffect(
     useCallback(() => {
       const fetchSpecies = async () => {
@@ -34,7 +34,69 @@ export default function SpeciesScreen() {
     }, [loadSpecies])
   );
 
-  // Estado de carregamento
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: theme.colors.background, // #F5F5F5 (light) ou #202225 (dark)
+    },
+    buttonContainer: {
+      marginTop: 16,
+      alignItems: 'flex-start',
+    },
+    button: {
+      marginBottom: 16,
+    },
+    card: {
+      marginBottom: 16,
+      backgroundColor: theme.colors.surface, // #FFFFFF (light) ou #292B2F (dark)
+      borderRadius: 12,
+      elevation: 4,
+      ...(Platform.OS === 'web' ? {
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      } : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      }),
+    },
+    title: {
+      fontSize: 18,
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      color: theme.colors.primary, // #32c273 (light) ou #7289DA (dark)
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.onSurfaceVariant, // #666666 (light) ou #DBDBDB (dark)
+      marginBottom: 4,
+    },
+    list: {
+      paddingBottom: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+      backgroundColor: theme.colors.background,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: theme.colors.text, // #333333 (light) ou #FFFFFF (dark)
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+    },
+    emptyText: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      color: theme.colors.text,
+      textAlign: 'center',
+    },
+  }), [theme]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -53,6 +115,8 @@ export default function SpeciesScreen() {
           label="Adicionar Espécie"
           mode="contained"
           style={styles.button}
+          buttonColor={theme.colors.primary} // #32c273 (light) ou #7289DA (dark)
+          textColor={theme.colors.onPrimary} // Branco para contraste
         />
       </View>
       {species.length === 0 ? (
@@ -66,13 +130,10 @@ export default function SpeciesScreen() {
           data={species}
           keyExtractor={(item: Species) => item.id}
           renderItem={({ item }: { item: Species }) => (
-            <Card
-              style={styles.card}
-              onPress={() => router.push(`/species/${item.id}`)}
-            >
+            <Card style={styles.card} onPress={() => router.push(`/species/${item.id}`)}>
               <Card.Content>
                 <Text style={styles.title} variant="headlineSmall">
-                  {item.name}
+                  {item.name || 'Espécie sem nome'}
                 </Text>
                 <Text style={styles.subtitle} variant="bodyMedium">
                   Nome Comum: {item.commonName || 'Sem nome comum'}
@@ -89,62 +150,3 @@ export default function SpeciesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: theme.colors.background,
-  },
-  buttonContainer: {
-    marginTop: 16,
-    alignItems: 'flex-start',
-  },
-  button: {
-    marginBottom: 16,
-  },
-  card: {
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface, // ✅ CORRIGIDO: usar surface para cards
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: theme.fonts.titleMedium.fontFamily, // ✅ CORRIGIDO: usar titleMedium
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO: usar bodyMedium
-    color: theme.colors.onSurfaceVariant, // ✅ CORRIGIDO: usar onSurfaceVariant para texto secundário
-    marginBottom: 4,
-  },
-  list: {
-    paddingBottom: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: theme.colors.background,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: theme.colors.text,
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO: usar bodyMedium
-  },
-  emptyText: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bodyMedium.fontFamily, // ✅ CORRIGIDO: usar bodyMedium
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-});

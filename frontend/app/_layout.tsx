@@ -1,27 +1,24 @@
 import { Quicksand_400Regular, Quicksand_600SemiBold, Quicksand_700Bold, useFonts } from '@expo-google-fonts/quicksand';
 import { Stack } from 'expo-router';
-import { useEffect } from 'react';
-import { LogBox, Text, View } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { LogBox, StyleSheet, Text, View } from 'react-native';
 import { ActivityIndicator, PaperProvider } from 'react-native-paper';
-import theme from '../constants/theme';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import { useTheme } from '../constants/theme';
 
-/**
- * Layout global do aplicativo, configurando fontes, tema e navegação.
- */
-export default function RootLayout() {
+function RootLayoutContent() {
   const [fontsLoaded, fontError] = useFonts({
     Quicksand_400Regular,
     Quicksand_600SemiBold,
     Quicksand_700Bold,
   });
+  const { theme } = useTheme();
 
-  // Ignorar warnings específicos
   LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state',
     'VirtualizedLists should never be nested',
   ]);
 
-  // Desabilitar console em produção
   if (!__DEV__) {
     console.log = () => {};
     console.warn = () => {};
@@ -34,12 +31,26 @@ export default function RootLayout() {
     }
   }, [fontError]);
 
+  const styles = useMemo(() => StyleSheet.create({
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background, // #F5F5F5 (light) ou #202225 (dark)
+    },
+    loadingText: {
+      color: theme.colors.text, // #333333 (light) ou #FFFFFF (dark)
+      fontFamily: 'Quicksand_400Regular',
+      marginTop: 8,
+    },
+  }), [theme]);
+
   if (!fontsLoaded && !fontError) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={{ color: theme.colors.text, fontFamily: theme.fonts.bodyMedium.fontFamily, marginTop: 8 }}>
-          Carregando fontes...
+        <Text style={styles.loadingText}>
+          Carregando...
         </Text>
       </View>
     );
@@ -58,5 +69,13 @@ export default function RootLayout() {
         <Stack.Screen name="(screens)" options={{ headerShown: false }} />
       </Stack>
     </PaperProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
   );
 }

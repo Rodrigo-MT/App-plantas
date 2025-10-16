@@ -1,8 +1,9 @@
 import { Controller } from 'react-hook-form';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { MaskedTextInput } from 'react-native-mask-text';
 import { Text, TextInput } from 'react-native-paper';
-import theme from '../constants/theme';
+import { useTheme } from '../constants/theme';
 
 /**
  * Campo de entrada mascarada integrado com react-hook-form.
@@ -19,6 +20,25 @@ interface MaskedInputProps {
 }
 
 export default function MaskedInput({ control, name, label, mask }: MaskedInputProps) {
+  const { theme } = useTheme();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      marginBottom: 16,
+    },
+    input: {
+      fontFamily: theme.fonts.default.fontFamily,
+      fontSize: 16,
+      color: theme.colors.text,
+    },
+    errorText: {
+      color: theme.colors.error,
+      fontSize: 12,
+      marginTop: 4,
+      fontFamily: theme.fonts.default.fontFamily,
+    },
+  }), [theme]);
+
   return (
     <Controller
       control={control}
@@ -44,7 +64,7 @@ export default function MaskedInput({ control, name, label, mask }: MaskedInputP
                 style={styles.input}
               />
             )}
-            theme={{ colors: { background: theme.colors.background } }}
+            theme={{ colors: { background: theme.colors.background, text: theme.colors.onSurfaceVariant } }}
           />
           {error && <Text style={styles.errorText}>{error.message}</Text>}
         </View>
@@ -52,20 +72,3 @@ export default function MaskedInput({ control, name, label, mask }: MaskedInputP
     />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  input: {
-    fontFamily: theme.fonts.default.fontFamily,
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  errorText: {
-    color: theme.colors.error,
-    fontSize: 12,
-    marginTop: 4,
-    fontFamily: theme.fonts.default.fontFamily,
-  },
-});

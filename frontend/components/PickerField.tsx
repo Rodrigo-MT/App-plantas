@@ -3,13 +3,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import theme from '../constants/theme';
 
-/**
- * Campo de seleção (dropdown) integrado com react-hook-form.
- * @param control Controlador do react-hook-form.
- * @param name Nome do campo no formulário.
- * @param label Rótulo do campo.
- * @param items Itens disponíveis para seleção (label e value).
- */
 interface PickerFieldProps {
   control: any;
   name: string;

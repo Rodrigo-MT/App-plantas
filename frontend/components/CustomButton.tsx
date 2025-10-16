@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps } from 'react-native';
-import theme from '../constants/theme';
+import { useTheme } from '../constants/theme';
 
 /**
  * Botão customizado com animações de escala e hover (para web), integrado com o tema do aplicativo.
@@ -41,6 +41,7 @@ export default function CustomButton({
   textColor,
   ...props
 }: CustomButtonProps) {
+  const { theme } = useTheme(); // ✅ Tema dinâmico
   const [scale] = useState(new Animated.Value(1));
   const [backgroundColor] = useState(new Animated.Value(0));
   const [isHovered, setIsHovered] = useState(false);
@@ -87,12 +88,62 @@ export default function CustomButton({
     }
   };
 
-  // ✅ CORREÇÃO: Usar secondary para botões contained (verde escuro)
+  // ✅ Estilos dinâmicos com useMemo
+  const styles = useMemo(() => StyleSheet.create({
+    button: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      alignItems: 'center',
+      marginVertical: 8,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    contained: {
+      backgroundColor: buttonColor || theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+    },
+    outlined: {
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: buttonColor || theme.colors.primary,
+    },
+    label: {
+      fontSize: 14,
+      fontFamily: theme.fonts.labelMedium.fontFamily,
+      fontWeight: theme.fonts.labelMedium.fontWeight,
+    },
+    containedLabel: {
+      color: textColor || theme.colors.onPrimary, // Branco sobre verde/azul
+    },
+    outlinedLabel: {
+      color: textColor || theme.colors.primary, // Verde #32c273 (light) ou #7289DA (dark)
+    },
+    disabled: {
+      backgroundColor: theme.colors.background,
+      opacity: 0.5,
+    },
+    disabledLabel: {
+      color: theme.colors.onSurfaceVariant, // #666666 (light) ou #DBDBDB (dark)
+    },
+    icon: {
+      fontFamily: 'MaterialIcons',
+      fontSize: 18,
+      marginRight: 8,
+      color: textColor || (mode === 'contained' ? theme.colors.onPrimary : theme.colors.primary),
+    },
+  }), [theme, buttonColor, textColor, mode]);
+
+  // Animação de fundo
   const buttonBackground = backgroundColor.interpolate({
     inputRange: [0, 1],
     outputRange: [
-      buttonColor || (mode === 'contained' ? theme.colors.secondary : theme.colors.background),
-      buttonColor || (mode === 'contained' ? theme.colors.primary : theme.colors.surfaceVariant),
+      buttonColor || (mode === 'contained' ? theme.colors.primary : theme.colors.background),
+      buttonColor || (mode === 'contained' ? theme.colors.accent : theme.colors.surfaceVariant),
     ],
   });
 
@@ -121,7 +172,11 @@ export default function CustomButton({
           style,
         ]}
       >
-        {icon && <Text style={[styles.icon, textColor && { color: textColor }]}>{icon}</Text>}
+        {icon && (
+          <Text style={[styles.icon, textColor && { color: textColor }]}>
+            {icon}
+          </Text>
+        )}
         <Text
           style={[
             styles.label,
@@ -136,53 +191,3 @@ export default function CustomButton({
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginVertical: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  contained: {
-    backgroundColor: theme.colors.secondary, // ✅ VERDE ESCURO para botões contained
-  },
-  outlined: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.secondary, // ✅ VERDE ESCURO para borda
-  },
-  label: {
-    fontSize: 14,
-    // ✅ CORREÇÃO: Usar labelMedium que existe no tema
-    fontFamily: theme.fonts.labelMedium.fontFamily,
-    fontWeight: theme.fonts.labelMedium.fontWeight,
-  },
-  containedLabel: {
-    color: theme.colors.onSecondary, // ✅ TEXTO BRANCO sobre verde escuro
-  },
-  outlinedLabel: {
-    color: theme.colors.secondary, // ✅ TEXTO VERDE ESCURO
-  },
-  disabled: {
-    backgroundColor: theme.colors.background,
-    opacity: 0.5,
-  },
-  disabledLabel: {
-    color: theme.colors.onSurfaceVariant,
-  },
-  icon: {
-    fontFamily: 'MaterialIcons',
-    fontSize: 18,
-    marginRight: 8,
-    color: theme.colors.onSecondary, // ✅ COR BRANCA para ícones em botões contained
-  },
-});

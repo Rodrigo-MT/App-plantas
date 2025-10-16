@@ -1,16 +1,12 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Animated, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect, useState, useMemo } from 'react';
+import { Animated, Dimensions, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Card, Text } from 'react-native-paper';
-import theme from '../constants/theme';
+import { useTheme } from '../constants/theme';
 import { useSpecies } from '../hooks/useSpecies';
 import { Plant } from '../types/plant';
 
-/**
- * Componente de cartão para exibir informações de uma planta com animação de escala.
- * @param plant Dados da planta.
- */
 interface PlantCardProps {
   plant: Plant;
 }
@@ -19,13 +15,12 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export default function PlantCard({ plant }: PlantCardProps) {
   const router = useRouter();
+  const { theme } = useTheme();
   const { species } = useSpecies();
   const [scale] = useState(new Animated.Value(1));
-
   const speciesName = species.find((s) => s.id === plant.speciesId)?.name || 'Desconhecida';
   const locationName = plant.locationId === '1' ? 'Sala' : plant.locationId === '2' ? 'Jardim' : 'Desconhecido';
-  
-  // Função segura para formatar data
+
   const getPurchaseDate = () => {
     try {
       const date = plant.purchaseDate instanceof Date ? plant.purchaseDate : new Date(plant.purchaseDate);
@@ -42,18 +37,57 @@ export default function PlantCard({ plant }: PlantCardProps) {
   const animatePressIn = () => {
     Animated.spring(scale, {
       toValue: 0.95,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
 
   const animatePressOut = () => {
     Animated.spring(scale, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
 
-  const cardWidth = screenWidth - 32; // Account for 16px padding on each side
+  const cardWidth = screenWidth - 32;
+
+  const styles = useMemo(() => StyleSheet.create({
+    card: {
+      marginBottom: 16,
+    },
+    cardContainer: {
+      backgroundColor: theme.colors.surface, // #FFFFFF (light) ou #292B2F (dark)
+      borderRadius: 12,
+      elevation: 4,
+      ...(Platform.OS === 'web' ? {
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      } : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      }),
+    },
+    image: {
+      width: '100%',
+      height: 150,
+      borderTopLeftRadius: 12,
+      borderTopRightRadius: 12,
+    },
+    title: {
+      fontSize: 18,
+      fontFamily: theme.fonts.titleMedium.fontFamily,
+      fontWeight: theme.fonts.titleMedium.fontWeight,
+      color: theme.colors.primary, // #32c273 (light) ou #7289DA (dark)
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bodyMedium.fontFamily,
+      fontWeight: theme.fonts.bodyMedium.fontWeight,
+      color: theme.colors.onSurfaceVariant, // #666666 (light) ou #DBDBDB (dark)
+      marginBottom: 4,
+    },
+  }), [theme]);
 
   return (
     <TouchableOpacity
@@ -73,7 +107,7 @@ export default function PlantCard({ plant }: PlantCardProps) {
           />
           <Card.Content>
             <Text style={styles.title} variant="titleMedium">
-              {plant.name}
+              {plant.name || 'Planta sem nome'}
             </Text>
             <Text style={styles.subtitle} variant="bodyMedium">
               Espécie: {speciesName}
@@ -93,40 +127,3 @@ export default function PlantCard({ plant }: PlantCardProps) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginBottom: 16,
-  },
-  cardContainer: {
-    backgroundColor: theme.colors.background,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  image: {
-    width: '100%',
-    height: 150,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  title: {
-    fontSize: 18,
-    // ✅ CORREÇÃO: Usar titleMedium que existe
-    fontFamily: theme.fonts.titleMedium.fontFamily,
-    fontWeight: theme.fonts.titleMedium.fontWeight,
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    // ✅ CORREÇÃO: Usar bodyMedium que existe
-    fontFamily: theme.fonts.bodyMedium.fontFamily,
-    fontWeight: theme.fonts.bodyMedium.fontWeight,
-    color: theme.colors.accent, // Mantido 'accent' pois existe no tema
-    marginBottom: 4,
-  },
-});

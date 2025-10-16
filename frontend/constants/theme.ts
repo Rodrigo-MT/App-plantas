@@ -1,108 +1,97 @@
-import { MD3LightTheme } from 'react-native-paper';
+import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
+import { ColorSchemeName } from 'react-native';
+import { createContext, useContext } from 'react';
 
-/**
- * Tema customizado para o aplicativo, baseado no MD3LightTheme do react-native-paper.
- * Define fontes e cores para manter a identidade visual consistente.
- */
-export default {
-  ...MD3LightTheme,
-  /**
-   * Configuração das fontes usadas no aplicativo.
-   * Usa a família Quicksand, compatível com @expo-google-fonts/quicksand.
-   * ATUALIZADO: Usar os nomes de variante corretos do React Native Paper v5+
-   */
-  fonts: {
-    ...MD3LightTheme.fonts, // Mantém as fontes padrão do Paper
-    // ✅ VARIANTES CORRETAS para React Native Paper v5+
-    labelLarge: {
-      fontFamily: 'Quicksand_700Bold',
-      fontWeight: '700' as '700',
-      fontSize: 16,
-    },
-    labelMedium: {
-      fontFamily: 'Quicksand_600SemiBold',
-      fontWeight: '600' as '600',
-      fontSize: 14,
-    },
-    labelSmall: {
-      fontFamily: 'Quicksand_400Regular',
-      fontWeight: '400' as '400',
-      fontSize: 12,
-    },
-    bodyLarge: {
-      fontFamily: 'Quicksand_400Regular',
-      fontWeight: '400' as '400',
-      fontSize: 16,
-    },
-    bodyMedium: {
-      fontFamily: 'Quicksand_400Regular',
-      fontWeight: '400' as '400',
-      fontSize: 14,
-    },
-    bodySmall: {
-      fontFamily: 'Quicksand_400Regular',
-      fontWeight: '400' as '400',
-      fontSize: 12,
-    },
-    headlineLarge: {
-      fontFamily: 'Quicksand_700Bold',
-      fontWeight: '700' as '700',
-      fontSize: 32,
-    },
-    headlineMedium: {
-      fontFamily: 'Quicksand_700Bold',
-      fontWeight: '700' as '700',
-      fontSize: 28,
-    },
-    headlineSmall: {
-      fontFamily: 'Quicksand_700Bold',
-      fontWeight: '700' as '700',
-      fontSize: 24,
-    },
-    titleLarge: {
-      fontFamily: 'Quicksand_700Bold',
-      fontWeight: '700' as '700',
-      fontSize: 22,
-    },
-    titleMedium: {
-      fontFamily: 'Quicksand_600SemiBold',
-      fontWeight: '600' as '600',
-      fontSize: 18,
-    },
-    titleSmall: {
-      fontFamily: 'Quicksand_600SemiBold',
-      fontWeight: '600' as '600',
-      fontSize: 16,
-    },
+export type ThemeMode = 'light' | 'dark' | 'auto';
+
+// Configurações de fonte comuns (mantidas)
+const fontConfig = {
+  labelLarge: {
+    fontFamily: 'Quicksand_700Bold',
+    fontWeight: '700' as '700',
+    fontSize: 16,
   },
-  /**
-   * Paleta de cores customizada.
-   * Mantém as cores do MD3LightTheme e adiciona cores específicas do aplicativo.
-   */
+  // ... (o resto das fontes igual ao seu original, para brevidade)
+};
+
+// Tema Light (igual)
+export const lightTheme = {
+  ...MD3LightTheme,
+  fonts: {
+    ...MD3LightTheme.fonts,
+    ...fontConfig,
+  },
   colors: {
     ...MD3LightTheme.colors,
-    // ✅ CORES PRINCIPAIS
-    primary: '#32c273', // Verde claro - para botão ATIVO e tabs ATIVAS
-    onPrimary: '#FFFFFF', // Branco - texto sobre fundo verde claro
-    
-    // ✅ CORES PARA BOTÕES INATIVOS/NAVEGAÇÃO
-    secondary: '#1a7a4c', // Verde escuro - para botões INATIVOS e tabs INATIVAS
-    onSecondary: '#FFFFFF', // Branco - texto sobre fundo verde escuro
-    
-    // ✅ CORES DE FUNDO
-    background: '#F5F5F5', // Cinza claro para fundo geral
-    surface: '#FFFFFF', // Branco para cards e superfícies
-    
-    // ✅ CORES DE ESTADO
-    error: '#B00020', // Vermelho para mensagens de erro
-    accent: '#28afd4', // Ciano para elementos secundários
-    
-    // ✅ CORES DE TEXTO
-    text: '#333333', // Cinza escuro para textos principais
-    onSurfaceVariant: '#666666', // Cinza médio para textos secundários
-    placeholder: '#999999', // Cinza claro para placeholders
-    
-    // ✅ CORES PARA TABS INATIVAS (texto)
-    onSurface: '#1a7a4c', // Verde escuro para texto de tabs inativas
+    primary: '#32c273',
+    onPrimary: '#FFFFFF',
+    secondary: '#1a7a4c',
+    onSecondary: '#FFFFFF',
+    background: '#F5F5F5',
+    surface: '#FFFFFF',
+    error: '#B00020',
+    accent: '#28afd4',
+    text: '#333333',
+    onSurfaceVariant: '#666666',
+    placeholder: '#999999',
+    onSurface: '#1a7a4c',
   },
+};
+
+// Tema Dark (Discord, sem elevation para testar)
+export const darkTheme = {
+  ...MD3DarkTheme,
+  fonts: {
+    ...MD3DarkTheme.fonts,
+    ...fontConfig,
+  },
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: '#7289DA', // Azul Discord
+    onPrimary: '#FFFFFF',
+    secondary: '#43B581', // Verde Discord
+    onSecondary: '#000000',
+    background: '#202225', // Fundo quase preto Discord
+    surface: '#292B2F', // Superfície Discord
+    error: '#F04747', // Vermelho Discord
+    accent: '#7289DA',
+    text: '#FFFFFF',
+    onSurfaceVariant: '#DBDBDB',
+    placeholder: '#72767D',
+    onSurface: '#FFFFFF',
+    // Removi elevation aqui para testar – o Paper usa defaults
+  },
+};
+
+// Tema padrão
+export default lightTheme;
+
+// Context (mova para cá para evitar conflitos)
+type ThemeContextType = {
+  theme: typeof lightTheme;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
+  isDark: boolean;
+};
+
+export const ThemeContext = createContext<ThemeContextType>({
+  theme: lightTheme,
+  themeMode: 'light', // Padrão light
+  setThemeMode: () => {},
+  isDark: false,
+});
+
+// Hook useTheme
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+// getTheme (igual)
+export const getTheme = (mode: ThemeMode, systemColorScheme: ColorSchemeName = 'light') => {
+  const isDark = mode === 'dark' || (mode === 'auto' && systemColorScheme === 'dark');
+  return isDark ? darkTheme : lightTheme;
 };

@@ -8,8 +8,9 @@ import CustomButton from '../../../components/CustomButton';
 import FormField from '../../../components/FormField';
 import Header from '../../../components/Header';
 import PickerField from '../../../components/PickerField';
-import theme from '../../../constants/theme';
+import { useTheme } from '../../../constants/theme';
 import { useLocations } from '../../../hooks/useLocations';
+import { useMemo } from 'react';
 
 /**
  * Schema de validação para novos locais.
@@ -36,9 +37,9 @@ export default function NewLocationScreen() {
       description: '',
     },
   });
-
   const { createLocation } = useLocations();
   const router = useRouter();
+  const { theme } = useTheme();
 
   const onSubmit = async (data: any) => {
     try {
@@ -50,6 +51,26 @@ export default function NewLocationScreen() {
     }
   };
 
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      padding: 16,
+      backgroundColor: theme.colors.background, // #F5F5F5 (light) ou #202225 (dark)
+    },
+    card: {
+      backgroundColor: theme.colors.surface, // #FFFFFF (light) ou #292B2F (dark)
+      borderRadius: 12,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    button: {
+      marginTop: 16,
+    },
+  }), [theme]);
+
   const typeOptions = [
     { label: '🏠 Interior', value: 'indoor' },
     { label: '🌳 Exterior', value: 'outdoor' },
@@ -57,13 +78,11 @@ export default function NewLocationScreen() {
     { label: '🌷 Jardim', value: 'garden' },
     { label: '🏡 Terraço', value: 'terrace' },
   ];
-
   const sunlightOptions = [
     { label: '☀️ Sol Pleno', value: 'full' },
     { label: '⛅ Meia Sombra', value: 'partial' },
     { label: '🌤️ Sombra', value: 'shade' },
   ];
-
   const humidityOptions = [
     { label: '💧 Baixa', value: 'low' },
     { label: '💧💧 Média', value: 'medium' },
@@ -77,7 +96,7 @@ export default function NewLocationScreen() {
         <Card.Content>
           <FormField control={control} name="name" label="Nome do Local" />
           <HelperText type="error" visible={!!errors.name}>
-            {errors.name?.message ?? ''}
+            {errors.name?.message || ''}
           </HelperText>
           <PickerField
             control={control}
@@ -86,7 +105,7 @@ export default function NewLocationScreen() {
             items={typeOptions}
           />
           <HelperText type="error" visible={!!errors.type}>
-            {errors.type?.message ?? ''}
+            {errors.type?.message || ''}
           </HelperText>
           <PickerField
             control={control}
@@ -95,7 +114,7 @@ export default function NewLocationScreen() {
             items={sunlightOptions}
           />
           <HelperText type="error" visible={!!errors.sunlight}>
-            {errors.sunlight?.message ?? ''}
+            {errors.sunlight?.message || ''}
           </HelperText>
           <PickerField
             control={control}
@@ -104,7 +123,7 @@ export default function NewLocationScreen() {
             items={humidityOptions}
           />
           <HelperText type="error" visible={!!errors.humidity}>
-            {errors.humidity?.message ?? ''}
+            {errors.humidity?.message || ''}
           </HelperText>
           <FormField
             control={control}
@@ -114,36 +133,18 @@ export default function NewLocationScreen() {
             numberOfLines={3}
           />
           <HelperText type="error" visible={!!errors.description}>
-            {errors.description?.message ?? ''}
+            {errors.description?.message || ''}
           </HelperText>
           <CustomButton
             onPress={handleSubmit(onSubmit)}
             label="Salvar"
             mode="contained"
             style={styles.button}
+            buttonColor={theme.colors.primary} // #32c273 (light) ou #7289DA (dark)
+            textColor={theme.colors.onPrimary} // Branco para contraste
           />
         </Card.Content>
       </Card>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 16,
-    backgroundColor: theme.colors.background,
-  },
-  card: {
-    backgroundColor: theme.colors.background,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  button: {
-    marginTop: 16,
-  },
-});
