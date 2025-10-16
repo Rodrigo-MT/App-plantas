@@ -1,3 +1,15 @@
+# 🌿 ARQUIVOS .env VERSIONADOS INTENCIONALMENTE
+# =============================================
+# Este é um gerenciador de plantas para uso doméstico/educacional
+# Não contém chaves de API, tokens ou dados sensíveis de produção
+# As variáveis são apenas URLs de desenvolvimento e configurações básicas
+# Versionamos .env para facilitar o setup de novos desenvolvedores
+#
+# ⚠️  EM CASO DE USO COM DADOS SENSÍVEIS:
+# - Adicione .env no .gitignore
+# - Use .env.example como template
+# - Nunca commit credenciais reais
+
 # compiled output
 /dist
 /node_modules
@@ -35,12 +47,12 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+# Removido.
+# .env
+# .env.development.local
+# .env.test.local
+# .env.production.local
+# .env.local
 
 # temp directory
 .temp
