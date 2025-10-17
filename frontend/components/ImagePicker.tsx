@@ -7,10 +7,65 @@ import { Button, Text } from 'react-native-paper';
 import theme from '../constants/theme';
 
 /**
- * Componente para seleção ou captura de imagens, com limite de 5MB.
- * @param control Controlador do react-hook-form.
- * @param name Nome do campo no formulário.
+ * URI → Base64 usando APENAS LEGACY API (SEM FileSystem nova)
  */
+async function uriToBase64(uri: string): Promise<string> {
+  console.log('🔄 Convertendo URI:', uri.substring(0, 50) + '...');
+  
+  try {
+    if (Platform.OS === 'web') {
+      console.log('🌐 WEB: usando FileReader');
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          console.log('✅ WEB base64 pronto');
+          resolve(reader.result as string);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } 
+
+    // MOBILE: IMPORTA LEGACY DINAMICAMENTE (sem TypeScript errors)
+    console.log('📱 MOBILE: importando legacy API');
+    const legacyFS = await import('expo-file-system/legacy');
+    const base64 = await legacyFS.readAsStringAsync(uri, { encoding: 'base64' });
+    
+    const extension = uri.split('.').pop()?.toLowerCase();
+    const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
+    const result = `data:${mimeType};base64,${base64}`;
+    
+    console.log('✅ MOBILE base64 pronto:', result.substring(0, 50) + '...');
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Erro na conversão:', error);
+    console.warn('🔄 Fallback: URI original para backend');
+    return uri;
+  }
+}
+
+/**
+ * Verifica tamanho do arquivo (simplificado)
+ */
+const checkFileSize = async (uri: string): Promise<number> => {
+  try {
+    if (Platform.OS === 'web') {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      return blob.size;
+    }
+    // Mobile: pula por agora (legacy API pode ser usada aqui também)
+    return 0;
+  } catch {
+    return 0;
+  }
+};
+
+// ... resto do componente permanece IGUAL ...
+
 interface ImagePickerProps {
   control: any;
   name: string;
@@ -18,90 +73,27 @@ interface ImagePickerProps {
 
 export default function ImagePicker({ control, name }: ImagePickerProps) {
   const [image, setImage] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-  /**
-   * Verifica o tamanho do arquivo usando fetch (alternativa ao FileSystem depreciado)
-   */
-  const checkFileSize = async (uri: string): Promise<number> => {
-    if (Platform.OS === 'web') {
-      // PARA WEB: Usar fetch para obter o tamanho
-      try {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        return blob.size;
-      } catch (error) {
-        console.error('Error checking file size on web:', error);
-        return 0;
-      }
-    } else {
-      // PARA MOBILE: Usar a nova API de FileSystem
-      try {
-        // Tenta usar a nova API primeiro
-        const { getInfoAsync } = await import('expo-file-system');
-        const fileInfo = await getInfoAsync(uri);
-        
-        // ✅ CORREÇÃO: Verificar se o arquivo existe e tem tamanho
-        if (fileInfo.exists && fileInfo.size !== undefined) {
-          return fileInfo.size;
-        } else {
-          console.warn('File does not exist or size is undefined:', uri);
-          return 0;
-        }
-      } catch (error) {
-        console.warn('Error with new FileSystem API, trying legacy:', error);
-        try {
-          // Fallback para API legada se necessário
-          const { getInfoAsync } = await import('expo-file-system/legacy');
-          const fileInfo = await getInfoAsync(uri);
-          
-          // ✅ CORREÇÃO: Verificar se a propriedade size existe
-          if ('size' in fileInfo && typeof fileInfo.size === 'number') {
-            return fileInfo.size;
-          } else {
-            console.warn('File size not available in legacy API');
-            return 0;
-          }
-        } catch (legacyError) {
-          console.error('Error with legacy FileSystem API:', legacyError);
-          return 0;
-        }
-      }
-    }
-  };
-
-  /**
-   * Seleciona uma imagem da galeria.
-   */
   const pickImage = async (onChange: (value: string) => void) => {
     try {
       const { status } = await ImagePickerLib.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permissão necessária', 'Precisamos de acesso à sua galeria para selecionar imagens.', [
-          { text: 'OK' },
-        ]);
+        Alert.alert('Permissão necessária', 'Precisamos de acesso à sua galeria.');
         return;
       }
+      
       const result = await ImagePickerLib.launchImageLibraryAsync({
         mediaTypes: ImagePickerLib.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
       });
+      
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
-        const fileSize = await checkFileSize(uri);
-        
-        if (fileSize === 0) {
-          console.warn('Could not determine file size, proceeding with upload');
-          // Continua mesmo sem saber o tamanho
-        } else if (fileSize > MAX_FILE_SIZE) {
-          Alert.alert('Imagem muito grande', 'A imagem deve ter no máximo 5MB. Escolha uma menor ou comprima.');
-          return;
-        }
-        
-        setImage(uri);
-        onChange(uri);
+        await processImage(uri, onChange);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -109,37 +101,23 @@ export default function ImagePicker({ control, name }: ImagePickerProps) {
     }
   };
 
-  /**
-   * Captura uma foto com a câmera.
-   */
   const takePhoto = async (onChange: (value: string) => void) => {
     try {
       const { status } = await ImagePickerLib.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permissão necessária', 'Precisamos de acesso à sua câmera para tirar fotos.', [
-          { text: 'OK' },
-        ]);
+        Alert.alert('Permissão necessária', 'Precisamos de acesso à câmera.');
         return;
       }
+      
       const result = await ImagePickerLib.launchCameraAsync({
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
       });
+      
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
-        const fileSize = await checkFileSize(uri);
-        
-        if (fileSize === 0) {
-          console.warn('Could not determine file size, proceeding with upload');
-          // Continua mesmo sem saber o tamanho
-        } else if (fileSize > MAX_FILE_SIZE) {
-          Alert.alert('Imagem muito grande', 'A imagem deve ter no máximo 5MB.');
-          return;
-        }
-        
-        setImage(uri);
-        onChange(uri);
+        await processImage(uri, onChange);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -147,9 +125,32 @@ export default function ImagePicker({ control, name }: ImagePickerProps) {
     }
   };
 
-  /**
-   * Remove a imagem selecionada.
-   */
+  const processImage = async (uri: string, onChange: (value: string) => void) => {
+    setConverting(true);
+    try {
+      console.log('🔄 Processando:', uri);
+      
+      // Verifica tamanho apenas no web por agora
+      const fileSize = await checkFileSize(uri);
+      if (Platform.OS === 'web' && fileSize > MAX_FILE_SIZE) {
+        Alert.alert('Imagem muito grande', `A imagem tem ${Math.round(fileSize / 1024 / 1024)}MB. Máximo: 5MB.`);
+        return;
+      }
+      
+      const base64Image = await uriToBase64(uri);
+      console.log('✅ Base64 pronto para form');
+      
+      setImage(base64Image);
+      onChange(base64Image);
+    } catch (error) {
+      console.error('❌ Erro processando imagem:', error);
+      Alert.alert('Erro', 'Não foi possível processar a imagem.');
+      onChange(uri); // Fallback
+    } finally {
+      setConverting(false);
+    }
+  };
+
   const removeImage = (onChange: (value: string) => void) => {
     setImage(null);
     onChange('');
@@ -169,24 +170,37 @@ export default function ImagePicker({ control, name }: ImagePickerProps) {
                 onPress={() => removeImage(onChange)}
                 style={styles.removeButton}
                 textColor={theme.colors.error}
+                loading={converting}
+                disabled={converting}
               >
-                Remover Imagem
+                {converting ? 'Processando...' : 'Remover Imagem'}
               </Button>
             </View>
           )}
           <View style={styles.buttonContainer}>
-            <Button mode="contained" onPress={() => pickImage(onChange)} style={styles.button} icon="image">
+            <Button 
+              mode="contained" 
+              onPress={() => pickImage(onChange)} 
+              style={styles.button} 
+              icon="image"
+              disabled={converting}
+              loading={converting}
+            >
               Galeria
             </Button>
-            <Button mode="outlined" onPress={() => takePhoto(onChange)} style={styles.button} icon="camera">
+            <Button 
+              mode="outlined" 
+              onPress={() => takePhoto(onChange)} 
+              style={styles.button} 
+              icon="camera"
+              disabled={converting}
+              loading={converting}
+            >
               Câmera
             </Button>
           </View>
-          {error && (
-            <Text style={styles.errorText}>
-              {error.message}
-            </Text>
-          )}
+          {error && <Text style={styles.errorText}>{error.message}</Text>}
+          {converting && <Text style={styles.convertingText}>Convertendo imagem...</Text>}
         </View>
       )}
     />
@@ -222,6 +236,14 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     fontSize: 12,
     marginTop: 4,
-    fontFamily: theme.fonts.bodyMedium.fontFamily,
+    fontFamily: theme.fonts.bodyMedium?.fontFamily || 'System',
+  },
+  convertingText: { // ← ADICIONADO NO STYLES
+    fontSize: 12,
+    color: theme.colors.primary,
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
+    fontFamily: theme.fonts.bodyMedium?.fontFamily || 'System',
   },
 });

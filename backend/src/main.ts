@@ -9,30 +9,42 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Habilita validação global de DTOs
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
-  // Configuração do CORS usando variáveis de ambiente
-  const corsOrigins = configService.get('CORS_ORIGINS', 'http://localhost:3001').split(',');
-  app.enableCors({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    credentials: true,
-  });
+  // Habilita CORS de forma segura
+  if (process.env.NODE_ENV === 'development') {
+    // Permite qualquer origem em dev (Web + IPs locais)
+    app.enableCors({
+      origin: true,
+      methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+      credentials: true,
+    });
+  } else {
+    // Produção: apenas origens definidas no .env
+    const corsOrigins = configService.get('CORS_ORIGINS', '').split(',');
+    app.enableCors({
+      origin: corsOrigins,
+      methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+      credentials: true,
+    });
+  }
 
-  // Configuração da documentação Swagger (fixa)
+  // Configuração Swagger
   const config = new DocumentBuilder()
     .setTitle('🌱 Plant Care API')
     .setDescription('API completa para gerenciamento de plantas domésticas')
     .setVersion('1.0')
-    .addTag('plants', 'Operações relacionadas a plantas')
-    .addTag('species', 'Operações relacionadas a espécies de plantas')
-    .addTag('locations', 'Operações relacionadas a localizações')
-    .addTag('care-reminders', 'Operações relacionadas a lembretes de cuidados')
-    .addTag('care-logs', 'Operações relacionadas a logs de cuidados realizados')
+    .addTag('plants')
+    .addTag('species')
+    .addTag('locations')
+    .addTag('care-reminders')
+    .addTag('care-logs')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -43,9 +55,7 @@ async function bootstrap() {
 
   const port = configService.get('PORT', 3000);
   await app.listen(port);
-  
   console.log(`🚀 API rodando em: http://localhost:${port}`);
-  console.log(`📚 Documentação disponível em: http://localhost:${port}/api`);
-  console.log(`🌍 Ambiente: ${configService.get('NODE_ENV', 'development')}`);
 }
+
 bootstrap();
