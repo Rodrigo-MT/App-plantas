@@ -25,6 +25,18 @@ O projeto tem como objetivo oferecer uma experiência interativa, leve e funcion
 
 ---
 
+## ❌ Ausência de React-Redux
+
+O React-Redux não foi incluído neste projeto por dois motivos principais:
+Primeiro, não fazia parte dos requisitos do trabalho, que exigiam a implementação de múltiplas telas, formulários, CRUDs e armazenamento local. Segundo, o aplicativo
+foi projetado como um Mini-App de funcionalidades simples, com estados majoritariamente locais e gerenciamento direto nos componentes. Nesse contexto, a utilização
+do Redux teria adicionado complexidade desnecessária sem oferecer benefícios reais para o controle do estado global.
+
+Para atender às necessidades de compartilhamento de dados, optou-se pelo gerenciamento interno nos componentes e, quando necessário, pelo uso de props ou de uma
+Context API simples, garantindo legibilidade, manutenção e performance adequadas ao escopo do projeto.
+
+---
+
 ## 📱 Funcionalidades
 
 - 🌱 Cadastro e listagem de plantas.  
