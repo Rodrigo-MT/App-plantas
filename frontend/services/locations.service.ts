@@ -39,7 +39,10 @@ export async function createLocation(location: Omit<Location, 'id' | 'createdAt'
  */
 export async function updateLocation(location: Location): Promise<Location> {
   try {
-    const response = await api.patch(`/locations/${location.id}`, location);
+    // ✅ CORREÇÃO: Remove o id do payload mas mantém 1 argumento
+    const { id, ...dataWithoutId } = location;
+    
+    const response = await api.patch(`/locations/${id}`, dataWithoutId);
     return response.data;
   } catch (error) {
     console.error('Error updating location via API:', error);

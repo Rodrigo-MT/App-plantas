@@ -39,7 +39,10 @@ export async function createSpecies(species: Omit<Species, 'id' | 'createdAt' | 
  */
 export async function updateSpecies(species: Species): Promise<Species> {
   try {
-    const response = await api.patch(`/species/${species.id}`, species);
+    // ✅ CORREÇÃO: Remove o id do payload
+    const { id, ...dataWithoutId } = species;
+    
+    const response = await api.patch(`/species/${id}`, dataWithoutId);
     return response.data;
   } catch (error) {
     console.error('Error updating species via API:', error);

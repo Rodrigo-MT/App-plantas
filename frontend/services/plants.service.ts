@@ -1,92 +1,111 @@
+// src/services/plants.service.ts
 import api from './api';
 import { Plant } from '../types/plant';
 
 /**
+ * Converte string YYYY-MM-DD para Date local (mantém o dia correto)
+ * Mesma lógica que funciona no careLogs.service.ts
+ */
+function toLocalDate(dateString?: string): Date | null {
+  if (!dateString) return null;
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Normaliza planta recebida da API (mesma estrutura dos outros serviços)
+ */
+function normalizePlant(plant: any): Plant {
+  return {
+    ...plant,
+    id: plant.id || plant._id,
+    purchaseDate: toLocalDate(plant.purchaseDate), // Converte string → Date ao receber
+    // createdAt e updatedAt o backend provavelmente já retorna como ISO string
+    createdAt: plant.createdAt ? new Date(plant.createdAt) : new Date(),
+    updatedAt: plant.updatedAt ? new Date(plant.updatedAt) : new Date(),
+  };
+}
+
+/**
  * Recupera todas as plantas da API.
- * @returns Lista de plantas ou array vazio em caso de erro.
  */
 export async function getPlants(): Promise<Plant[]> {
   try {
     const response = await api.get('/plants');
-    return response.data;
+    return response.data.map(normalizePlant);
   } catch (error) {
-    console.error('Error getting plants from API:', error);
+    console.error('❌ Erro ao buscar plantas:', error);
     return [];
   }
 }
 
 /**
  * Cria uma nova planta via API.
- * @param plant Dados da planta (sem ID, que é gerado automaticamente).
- * @returns A planta criada.
- * @throws Erro se a criação falhar.
+ * ENVIA Date diretamente (como nos outros serviços que funcionam)
  */
-export async function createPlant(plant: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>): Promise<Plant> {
+export async function createPlant(
+  plant: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<Plant> {
   try {
+    // ENVIA Date diretamente - backend converte para string YYYY-MM-DD
     const response = await api.post('/plants', plant);
-    return response.data;
+    return normalizePlant(response.data);
   } catch (error) {
-    console.error('Error creating plant via API:', error);
+    console.error('❌ Erro ao criar planta:', error);
     throw error;
   }
 }
 
 /**
  * Atualiza uma planta existente via API.
- * @param plant Dados atualizados da planta, incluindo ID.
- * @returns A planta atualizada.
- * @throws Erro se a atualização falhar.
+ * CORREÇÃO: Remove ID do payload + ENVIA Date diretamente
  */
 export async function updatePlant(plant: Plant): Promise<Plant> {
   try {
-    const response = await api.patch(`/plants/${plant.id}`, plant);
-    return response.data;
+    const { id, ...payload } = plant; // Remove ID do body (corrige erro de edição)
+    // ENVIA Date diretamente - backend lida com a conversão
+    const response = await api.patch(`/plants/${id}`, payload);
+    return normalizePlant(response.data);
   } catch (error) {
-    console.error('Error updating plant via API:', error);
+    console.error('❌ Erro ao atualizar planta:', error);
     throw error;
   }
 }
 
 /**
  * Deleta uma planta pelo ID via API.
- * @param id ID da planta a ser deletada.
- * @throws Erro se a deleção falhar.
  */
 export async function deletePlant(id: string): Promise<void> {
   try {
     await api.delete(`/plants/${id}`);
   } catch (error) {
-    console.error('Error deleting plant via API:', error);
+    console.error('❌ Erro ao deletar planta:', error);
     throw error;
   }
 }
 
 /**
  * Busca plantas por localização específica
- * @param locationId ID da localização
- * @returns Plantas da localização especificada
  */
 export async function getPlantsByLocation(locationId: string): Promise<Plant[]> {
   try {
     const response = await api.get(`/plants/location/${locationId}`);
-    return response.data;
+    return response.data.map(normalizePlant);
   } catch (error) {
-    console.error('Error getting plants by location:', error);
+    console.error('❌ Erro ao buscar plantas por localização:', error);
     return [];
   }
 }
 
 /**
  * Busca plantas por espécie específica
- * @param speciesId ID da espécie
- * @returns Plantas da espécie especificada
  */
 export async function getPlantsBySpecies(speciesId: string): Promise<Plant[]> {
   try {
     const response = await api.get(`/plants/species/${speciesId}`);
-    return response.data;
+    return response.data.map(normalizePlant);
   } catch (error) {
-    console.error('Error getting plants by species:', error);
+    console.error('❌ Erro ao buscar plantas por espécie:', error);
     return [];
   }
 }

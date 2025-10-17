@@ -1,134 +1,125 @@
+// src/services/careLogs.service.ts
 import api from './api';
 import { CareLog } from '../types/careLog';
 
 /**
- * Recupera todos os logs de cuidados da API.
- * @returns Lista de logs ou array vazio em caso de erro.
+ * Converte string de data em objeto Date sem alterar o dia.
  */
+function toLocalDate(dateString?: string): Date | null {
+  if (!dateString) return null;
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Normaliza campos de data de um CareLog.
+ */
+function normalizeLog(log: any): CareLog {
+  return {
+    ...log,
+    date: toLocalDate(log.date),
+    createdAt: new Date(log.createdAt),
+    updatedAt: new Date(log.updatedAt),
+  };
+}
+
+/** Recupera todos os logs de cuidados */
 export async function getCareLogs(): Promise<CareLog[]> {
   try {
-    const response = await api.get('/care-logs');
-    return response.data;
+    const { data } = await api.get('/care-logs');
+    return data.map(normalizeLog);
   } catch (error) {
-    console.error('Error getting care logs from API:', error);
+    console.error('❌ Erro ao buscar logs de cuidados:', error);
     return [];
   }
 }
 
-/**
- * Cria um novo log de cuidado via API.
- * @param log Dados do log (sem ID, que é gerado automaticamente pelo backend).
- * @returns O log criado.
- * @throws Erro se a criação falhar.
- */
-export async function createCareLog(log: Omit<CareLog, 'id' | 'createdAt' | 'updatedAt'>): Promise<CareLog> {
+/** Cria um novo log de cuidado */
+export async function createCareLog(
+  log: Omit<CareLog, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<CareLog> {
   try {
-    const response = await api.post('/care-logs', log);
-    return response.data;
+    const { data } = await api.post('/care-logs', log);
+    return normalizeLog(data);
   } catch (error) {
-    console.error('Error creating care log via API:', error);
+    console.error('❌ Erro ao criar log de cuidado:', error);
     throw error;
   }
 }
 
-/**
- * Atualiza um log de cuidado existente via API.
- * @param log Dados atualizados do log, incluindo ID.
- * @returns O log atualizado.
- * @throws Erro se a atualização falhar.
- */
+/** Atualiza um log de cuidado existente */
 export async function updateCareLog(log: CareLog): Promise<CareLog> {
   try {
-    const response = await api.patch(`/care-logs/${log.id}`, log);
-    return response.data;
+    const { id, ...payload } = log; // remove id do body para não quebrar o backend
+    const { data } = await api.patch(`/care-logs/${id}`, payload);
+    return normalizeLog(data);
   } catch (error) {
-    console.error('Error updating care log via API:', error);
+    console.error('❌ Erro ao atualizar log de cuidado:', error);
     throw error;
   }
 }
 
-/**
- * Deleta um log de cuidado pelo ID via API.
- * @param id ID do log a ser deletado.
- * @throws Erro se a deleção falhar.
- */
+/** Deleta um log de cuidado pelo ID */
 export async function deleteCareLog(id: string): Promise<void> {
   try {
     await api.delete(`/care-logs/${id}`);
   } catch (error) {
-    console.error('Error deleting care log via API:', error);
+    console.error('❌ Erro ao deletar log de cuidado:', error);
     throw error;
   }
 }
 
-/**
- * Busca logs por planta específica
- * @param plantId ID da planta
- * @returns Logs da planta especificada
- */
+/** Busca logs por planta específica */
 export async function getCareLogsByPlant(plantId: string): Promise<CareLog[]> {
   try {
-    const response = await api.get(`/care-logs?plantId=${plantId}`);
-    return response.data;
+    const { data } = await api.get(`/care-logs?plantId=${plantId}`);
+    return data.map(normalizeLog);
   } catch (error) {
-    console.error('Error getting care logs by plant:', error);
+    console.error('❌ Erro ao buscar logs por planta:', error);
     return [];
   }
 }
 
-/**
- * Busca logs por tipo de cuidado
- * @param type Tipo de cuidado
- * @returns Logs do tipo especificado
- */
+/** Busca logs por tipo de cuidado */
 export async function getCareLogsByType(type: string): Promise<CareLog[]> {
   try {
-    const response = await api.get(`/care-logs?type=${type}`);
-    return response.data;
+    const { data } = await api.get(`/care-logs?type=${type}`);
+    return data.map(normalizeLog);
   } catch (error) {
-    console.error('Error getting care logs by type:', error);
+    console.error('❌ Erro ao buscar logs por tipo:', error);
     return [];
   }
 }
 
-/**
- * Busca logs recentes (últimos 30 dias)
- * @returns Logs dos últimos 30 dias
- */
+/** Busca logs recentes (últimos 30 dias) */
 export async function getRecentCareLogs(): Promise<CareLog[]> {
   try {
-    const response = await api.get('/care-logs/recent');
-    return response.data;
+    const { data } = await api.get('/care-logs/recent');
+    return data.map(normalizeLog);
   } catch (error) {
-    console.error('Error getting recent care logs:', error);
+    console.error('❌ Erro ao buscar logs recentes:', error);
     return [];
   }
 }
 
-/**
- * Busca logs bem-sucedidos
- * @returns Logs com sucesso = true
- */
+/** Busca logs bem-sucedidos */
 export async function getSuccessfulCareLogs(): Promise<CareLog[]> {
   try {
-    const response = await api.get('/care-logs/successful');
-    return response.data;
+    const { data } = await api.get('/care-logs/successful');
+    return data.map(normalizeLog);
   } catch (error) {
-    console.error('Error getting successful care logs:', error);
+    console.error('❌ Erro ao buscar logs bem-sucedidos:', error);
     return [];
   }
 }
 
-/**
- * Busca estatísticas de cuidados
- * @returns Contagem de cuidados por tipo
- */
+/** Busca estatísticas de cuidados agrupadas por tipo */
 export async function getCareLogsStats(): Promise<{ type: string; count: number }[]> {
   try {
-    const response = await api.get('/care-logs/stats');
-    return response.data;
+    const { data } = await api.get('/care-logs/stats');
+    return data;
   } catch (error) {
-    console.error('Error getting care logs stats:', error);
+    console.error('❌ Erro ao buscar estatísticas de logs de cuidado:', error);
     return [];
   }
 }
