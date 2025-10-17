@@ -3,6 +3,12 @@
 Um aplicativo mobile desenvolvido em **React Native** com **Expo** e **NestJS** no backend, voltado ao cuidado, identificação e acompanhamento de plantas.  
 O projeto tem como objetivo oferecer uma experiência interativa, leve e funcional para quem deseja aprender mais sobre o cultivo de plantas e melhorar o cuidado com elas.
 
+## ⚠️ Aviso sobre a plataforma
+
+Este aplicativo foi desenvolvido **para dispositivos móveis**.  
+Abrir a versão web pode ocasionar **comportamentos inesperados ou erros**.  
+Recomenda-se utilizar um **emulador de dispositivo móvel** para testar ou rodar a aplicação corretamente.
+
 ---
 
 ## 🚀 Tecnologias Utilizadas
