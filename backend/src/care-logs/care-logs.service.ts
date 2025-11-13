@@ -4,25 +4,58 @@ import { Repository, Between } from 'typeorm';
 import { CareLog } from './entities/care-log.entity';
 import { CreateCareLogDto } from './dto/create-care-log.dto';
 import { UpdateCareLogDto } from './dto/update-care-log.dto';
+import { Plant } from '../plants/entities/plant.entity';
 
 @Injectable()
 export class CareLogsService {
   constructor(
     @InjectRepository(CareLog)
-    private careLogsRepository: Repository<CareLog>,
+    private readonly careLogsRepository: Repository<CareLog>,
+
+    @InjectRepository(Plant)
+    private readonly plantsRepository: Repository<Plant>, // 🔹 Injeta repositório de plantas
   ) {}
 
   /**
    * Cria um novo log de cuidado
-   * @param createCareLogDto Dados para criação do log
-   * @returns Log criado
    */
   async create(createCareLogDto: CreateCareLogDto): Promise<CareLog> {
+    const { plantId, type, date, notes } = createCareLogDto;
+
+    // 🔹 Regras de negócio e validações
+    if (!plantId) throw new BadRequestException('A planta é obrigatória.');
+    if (!type) throw new BadRequestException('O tipo de cuidado é obrigatório.');
+    if (!date) throw new BadRequestException('A data do cuidado é obrigatória.');
+
+    // 🔹 Verifica se a planta existe
+    const plant = await this.plantsRepository.findOne({ where: { id: plantId } });
+    if (!plant) {
+      throw new NotFoundException(`Planta com ID ${plantId} não encontrada.`);
+    }
+
+    const parsedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (parsedDate > today) {
+      throw new BadRequestException('A data do cuidado não pode ser no futuro.');
+    }
+
+    if (!notes || notes.trim().length === 0) {
+      throw new BadRequestException('O campo de observações é obrigatório.');
+    }
+
+    if (notes.length > 500) {
+      throw new BadRequestException('As observações devem ter no máximo 500 caracteres.');
+    }
+
     try {
       const careLog = this.careLogsRepository.create({
         ...createCareLogDto,
-        date: new Date(createCareLogDto.date), // Converte string para Date
+        plant,
+        date: parsedDate,
       });
+
       return await this.careLogsRepository.save(careLog);
     } catch (error) {
       throw new BadRequestException('Erro ao criar log de cuidado: ' + error.message);
@@ -31,19 +64,16 @@ export class CareLogsService {
 
   /**
    * Retorna todos os logs
-   * @returns Lista de logs
    */
   async findAll(): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
       relations: ['plant'],
-      order: { date: 'DESC' }, // Ordena do mais recente para o mais antigo
+      order: { date: 'DESC' },
     });
   }
 
   /**
-   * Busca logs por planta específica
-   * @param plantId ID da planta
-   * @returns Logs da planta
+   * Busca logs por planta
    */
   async findByPlantId(plantId: string): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
@@ -55,8 +85,6 @@ export class CareLogsService {
 
   /**
    * Busca logs por tipo
-   * @param type Tipo de cuidado
-   * @returns Logs do tipo especificado
    */
   async findByType(type: string): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
@@ -67,26 +95,18 @@ export class CareLogsService {
   }
 
   /**
-   * Busca logs por período de tempo
-   * @param startDate Data inicial
-   * @param endDate Data final
-   * @returns Logs no período especificado
+   * Busca logs por intervalo de tempo
    */
   async findByDateRange(startDate: Date, endDate: Date): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
-      where: {
-        date: Between(startDate, endDate),
-      },
+      where: { date: Between(startDate, endDate) },
       relations: ['plant'],
       order: { date: 'DESC' },
     });
   }
 
   /**
-   * Busca um log específico pelo ID
-   * @param id UUID do log
-   * @returns Log encontrado
-   * @throws NotFoundException se o log não existir
+   * Busca log por ID
    */
   async findOne(id: string): Promise<CareLog> {
     const careLog = await this.careLogsRepository.findOne({
@@ -95,30 +115,46 @@ export class CareLogsService {
     });
 
     if (!careLog) {
-      throw new NotFoundException(`Log de cuidado com ID ${id} não encontrado`);
+      throw new NotFoundException(`Log de cuidado com ID ${id} não encontrado.`);
     }
 
     return careLog;
   }
 
   /**
-   * Atualiza os dados de um log existente
-   * @param id UUID do log a ser atualizado
-   * @param updateCareLogDto Dados parciais para atualização
-   * @returns Log atualizado
+   * Atualiza log existente
    */
   async update(id: string, updateCareLogDto: UpdateCareLogDto): Promise<CareLog> {
-    const careLog = await this.findOne(id); // Valida se o log existe
-    
-    try {
-      const updateData: any = { ...updateCareLogDto };
-      
-      // Converte date de string para Date se fornecido
-      if (updateCareLogDto.date) {
-        updateData.date = new Date(updateCareLogDto.date);
+    const existing = await this.findOne(id);
+
+    if (updateCareLogDto.plantId) {
+      const plant = await this.plantsRepository.findOne({
+        where: { id: updateCareLogDto.plantId },
+      });
+      if (!plant) {
+        throw new NotFoundException(`Planta com ID ${updateCareLogDto.plantId} não encontrada.`);
       }
-      
-      const updated = this.careLogsRepository.merge(careLog, updateData);
+      existing.plant = plant;
+    }
+
+    if (updateCareLogDto.date) {
+      const parsedDate = new Date(updateCareLogDto.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (parsedDate > today) {
+        throw new BadRequestException('A data do cuidado não pode ser no futuro.');
+      }
+
+      existing.date = parsedDate;
+    }
+
+    if (updateCareLogDto.notes && updateCareLogDto.notes.length > 500) {
+      throw new BadRequestException('O campo de observações deve ter no máximo 500 caracteres.');
+    }
+
+    try {
+      const updated = this.careLogsRepository.merge(existing, updateCareLogDto);
       return await this.careLogsRepository.save(updated);
     } catch (error) {
       throw new BadRequestException('Erro ao atualizar log de cuidado: ' + error.message);
@@ -126,21 +162,17 @@ export class CareLogsService {
   }
 
   /**
-   * Remove um log do sistema
-   * @param id UUID do log a ser removido
-   * @throws NotFoundException se o log não existir
+   * Remove log
    */
   async remove(id: string): Promise<void> {
     const result = await this.careLogsRepository.delete(id);
-    
     if (result.affected === 0) {
-      throw new NotFoundException(`Log de cuidado com ID ${id} não encontrado`);
+      throw new NotFoundException(`Log de cuidado com ID ${id} não encontrado.`);
     }
   }
 
   /**
    * Estatísticas de cuidados por tipo
-   * @returns Contagem de cuidados por tipo
    */
   async getCareStats(): Promise<{ type: string; count: number }[]> {
     return await this.careLogsRepository
@@ -152,25 +184,21 @@ export class CareLogsService {
   }
 
   /**
-   * Busca logs recentes (últimos 30 dias)
-   * @returns Logs dos últimos 30 dias
+   * Logs dos últimos 30 dias
    */
   async findRecent(): Promise<CareLog[]> {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     return await this.careLogsRepository.find({
-      where: {
-        date: Between(thirtyDaysAgo, new Date()),
-      },
+      where: { date: Between(thirtyDaysAgo, new Date()) },
       relations: ['plant'],
       order: { date: 'DESC' },
     });
   }
 
   /**
-   * Busca logs bem-sucedidos
-   * @returns Logs com sucesso = true
+   * Logs bem-sucedidos
    */
   async findSuccessful(): Promise<CareLog[]> {
     return await this.careLogsRepository.find({
@@ -181,8 +209,7 @@ export class CareLogsService {
   }
 
   /**
-   * Contagem total de logs no sistema
-   * @returns Número total de logs
+   * Contagem total
    */
   async getTotalCount(): Promise<number> {
     return await this.careLogsRepository.count();

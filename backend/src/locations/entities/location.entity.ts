@@ -41,8 +41,8 @@ export class Location {
   description?: string;
 
   @ApiPropertyOptional({ description: 'URL da foto da localização', example: 'https://exemplo.com/localizacao.jpg' })
-  @Column({ nullable: true })
-  photo?: string;
+  @Column({ type: 'text', nullable: true })
+  photo?: string | null; // Base64
 
   @ApiProperty({ type: () => [Plant], description: 'Plantas nesta localização' })
   @OneToMany(() => Plant, (plant) => plant.location)

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Location } from './entities/location.entity';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { LocationType, SunlightLevel, HumidityLevel } from './dto/create-location.dto';
 
 @Injectable()
 export class LocationsService implements OnModuleInit {
@@ -25,56 +26,52 @@ export class LocationsService implements OnModuleInit {
   private async seedDefaultLocations(): Promise<void> {
     try {
       const existingCount = await this.locationsRepository.count();
-      
       if (existingCount === 0) {
         console.log('🌱 Creating default locations...');
-        
         const defaultLocations = [
           {
             name: 'Sala de Estar',
-            type: 'indoor',
-            sunlight: 'partial',
-            humidity: 'medium',
+            type: LocationType.INDOOR,
+            sunlight: SunlightLevel.PARTIAL,
+            humidity: HumidityLevel.MEDIUM,
             description: 'Ambiente interno com luz indireta',
             photo: 'https://example.com/sala-estar.jpg',
           },
           {
             name: 'Jardim',
-            type: 'garden',
-            sunlight: 'full',
-            humidity: 'high',
+            type: LocationType.GARDEN,
+            sunlight: SunlightLevel.FULL,
+            humidity: HumidityLevel.HIGH,
             description: 'Área externa com sol direto',
             photo: 'https://example.com/jardim.jpg',
           },
           {
             name: 'Varanda',
-            type: 'balcony',
-            sunlight: 'partial',
-            humidity: 'medium',
+            type: LocationType.BALCONY,
+            sunlight: SunlightLevel.PARTIAL,
+            humidity: HumidityLevel.MEDIUM,
             description: 'Varanda com luz solar da manhã',
             photo: 'https://example.com/varanda.jpg',
           },
           {
             name: 'Terraço',
-            type: 'terrace',
-            sunlight: 'full',
-            humidity: 'low',
+            type: LocationType.TERRACE,
+            sunlight: SunlightLevel.FULL,
+            humidity: HumidityLevel.LOW,
             description: 'Terraço exposto ao sol',
             photo: 'https://example.com/terrace.jpg',
           },
           {
             name: 'Quintal',
-            type: 'outdoor',
-            sunlight: 'shade',
-            humidity: 'high',
+            type: LocationType.OUTDOOR,
+            sunlight: SunlightLevel.SHADE,
+            humidity: HumidityLevel.HIGH,
             description: 'Área sombreada do quintal',
             photo: 'https://example.com/quintal.jpg',
-          }
+          },
         ];
-
         const locationsToCreate = this.locationsRepository.create(defaultLocations);
         await this.locationsRepository.save(locationsToCreate);
-        
         console.log(`✅ Created ${locationsToCreate.length} default locations`);
       } else {
         console.log(`✅ Locations already exist in database (${existingCount} records)`);
@@ -85,11 +82,36 @@ export class LocationsService implements OnModuleInit {
   }
 
   /**
-   * Cria uma nova localização no sistema
-   * @param createLocationDto Dados para criação da localização
-   * @returns Localização criada
+   * Cria uma nova localização no sistema com validações contextuais
    */
   async create(createLocationDto: CreateLocationDto): Promise<Location> {
+    const { name, type, sunlight, humidity, description, photo } = createLocationDto;
+
+    // 🧠 Validações de negócio
+    if (!name?.trim()) throw new BadRequestException('O nome do local é obrigatório.');
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+$/.test(name)) {
+      throw new BadRequestException('O nome do local não pode conter caracteres especiais.');
+    }
+
+    if (!Object.values(LocationType).includes(type)) {
+      throw new BadRequestException('Tipo de local inválido.');
+    }
+
+    if (!Object.values(SunlightLevel).includes(sunlight)) {
+      throw new BadRequestException('Nível de luz inválido.');
+    }
+
+    if (!Object.values(HumidityLevel).includes(humidity)) {
+      throw new BadRequestException('Nível de umidade inválido.');
+    }
+
+    if (!description?.trim()) throw new BadRequestException('A descrição é obrigatória.');
+    if (description.length > 500) throw new BadRequestException('A descrição deve ter no máximo 500 caracteres.');
+
+    if (photo && !/^https?:\/\/.+/.test(photo)) {
+      throw new BadRequestException('Anexo de imagem inválido.');
+    }
+
     try {
       const location = this.locationsRepository.create(createLocationDto);
       return await this.locationsRepository.save(location);
@@ -99,83 +121,98 @@ export class LocationsService implements OnModuleInit {
   }
 
   /**
-   * Retorna todas as localizações
-   * @returns Lista de localizações
-   */
-  async findAll(): Promise<Location[]> {
-    return await this.locationsRepository.find({
-      order: { name: 'ASC' }, // Ordena por nome alfabeticamente
-    });
-  }
-
-  /**
-   * Busca uma localização específica pelo ID
-   * @param id UUID da localização
-   * @returns Localização encontrada
-   * @throws NotFoundException se a localização não existir
-   */
-  async findOne(id: string): Promise<Location> {
-    const location = await this.locationsRepository.findOne({
-      where: { id },
-    });
-
-    if (!location) {
-      throw new NotFoundException(`Localização com ID ${id} não encontrada`);
-    }
-
-    return location;
-  }
-
-  /**
-   * Busca localizações por tipo de ambiente
-   * @param type Tipo de ambiente (indoor, outdoor, balcony, garden, terrace)
-   * @returns Lista de localizações do tipo especificado
-   */
-  async findByType(type: string): Promise<Location[]> {
-    return await this.locationsRepository.find({
-      where: { type },
-      order: { name: 'ASC' },
-    });
-  }
-
-  /**
-   * Busca localizações por nível de luz solar
-   * @param sunlight Nível de luz solar (full, partial, shade)
-   * @returns Lista de localizações com o nível de luz especificado
-   */
-  async findBySunlight(sunlight: string): Promise<Location[]> {
-    return await this.locationsRepository.find({
-      where: { sunlight },
-      order: { name: 'ASC' },
-    });
-  }
-
-  /**
-   * Atualiza os dados de uma localização existente
-   * @param id UUID da localização a ser atualizada
-   * @param updateLocationDto Dados parciais para atualização
-   * @returns Localização atualizada
+   * Atualiza os dados de uma localização existente com validações contextuais
    */
   async update(id: string, updateLocationDto: UpdateLocationDto): Promise<Location> {
-    const location = await this.findOne(id); // Valida se a localização existe
-    
+    const location = await this.findOne(id);
+    const { name, type, sunlight, humidity, description, photo } = updateLocationDto;
+
+    // 🧠 Valida apenas os campos enviados
+    if (name !== undefined) {
+      if (!name?.trim()) throw new BadRequestException('O nome do local não pode ser vazio.');
+      if (!/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+$/.test(name)) {
+        throw new BadRequestException('O nome do local não pode conter caracteres especiais.');
+      }
+      location.name = name;
+    }
+
+    if (type !== undefined) {
+      if (!Object.values(LocationType).includes(type)) {
+        throw new BadRequestException('Tipo de local inválido.');
+      }
+      location.type = type;
+    }
+
+    if (sunlight !== undefined) {
+      if (!Object.values(SunlightLevel).includes(sunlight)) {
+        throw new BadRequestException('Nível de luz inválido.');
+      }
+      location.sunlight = sunlight;
+    }
+
+    if (humidity !== undefined) {
+      if (!Object.values(HumidityLevel).includes(humidity)) {
+        throw new BadRequestException('Nível de umidade inválido.');
+      }
+      location.humidity = humidity;
+    }
+
+    if (description !== undefined) {
+      if (!description?.trim()) throw new BadRequestException('A descrição não pode ser vazia.');
+      if (description.length > 500) throw new BadRequestException('A descrição deve ter no máximo 500 caracteres.');
+      location.description = description;
+    }
+
+    if (photo !== undefined) {
+      if (photo && !/^https?:\/\/.+/.test(photo)) {
+        throw new BadRequestException('Imagem inválida.');
+      }
+      location.photo = photo;
+    }
+
     try {
-      const updated = this.locationsRepository.merge(location, updateLocationDto);
-      return await this.locationsRepository.save(updated);
+      return await this.locationsRepository.save(location);
     } catch (error) {
       throw new BadRequestException('Erro ao atualizar localização: ' + error.message);
     }
   }
 
   /**
+   * Retorna todas as localizações
+   */
+  async findAll(): Promise<Location[]> {
+    return await this.locationsRepository.find({ order: { name: 'ASC' } });
+  }
+
+  /**
+   * Busca uma localização específica pelo ID
+   */
+  async findOne(id: string): Promise<Location> {
+    const location = await this.locationsRepository.findOne({ where: { id } });
+    if (!location) throw new NotFoundException(`Localização com ID ${id} não encontrada`);
+    return location;
+  }
+
+  /**
+   * Busca localizações por tipo de ambiente
+   */
+  async findByType(type: string): Promise<Location[]> {
+    return await this.locationsRepository.find({ where: { type }, order: { name: 'ASC' } });
+  }
+
+  /**
+   * Busca localizações por nível de luz solar
+   */
+  async findBySunlight(sunlight: string): Promise<Location[]> {
+    return await this.locationsRepository.find({ where: { sunlight }, order: { name: 'ASC' } });
+  }
+
+  /**
    * Remove uma localização do sistema
-   * @param id UUID da localização a ser removida
-   * @throws NotFoundException se a localização não existir
    */
   async remove(id: string): Promise<void> {
     const location = await this.findOne(id);
-    
-    // Verifica se a localização tem plantas associadas
+
     const plantsCount = await this.locationsRepository
       .createQueryBuilder('location')
       .leftJoin('location.plants', 'plant')
@@ -190,15 +227,11 @@ export class LocationsService implements OnModuleInit {
     }
 
     const result = await this.locationsRepository.delete(id);
-    
-    if (result.affected === 0) {
-      throw new NotFoundException(`Localização com ID ${id} não encontrada`);
-    }
+    if (result.affected === 0) throw new NotFoundException(`Localização com ID ${id} não encontrada`);
   }
 
   /**
    * Estatísticas de localizações
-   * @returns Contagem de plantas por localização
    */
   async getLocationStats(): Promise<{ locationId: string; locationName: string; plantCount: number }[]> {
     return await this.locationsRepository
@@ -215,8 +248,6 @@ export class LocationsService implements OnModuleInit {
 
   /**
    * Verifica se uma localização está vazia (sem plantas)
-   * @param id UUID da localização
-   * @returns true se a localização não tiver plantas
    */
   async isEmpty(id: string): Promise<boolean> {
     const plantsCount = await this.locationsRepository
@@ -226,16 +257,12 @@ export class LocationsService implements OnModuleInit {
       .select('COUNT(plant.id)', 'count')
       .getRawOne();
 
-    if (!plantsCount) {
-      throw new NotFoundException(`Localização com ID ${id} não encontrada`);
-    }
-
+    if (!plantsCount) throw new NotFoundException(`Localização com ID ${id} não encontrada`);
     return parseInt(plantsCount.count) === 0;
   }
 
   /**
    * Contagem total de localizações no sistema
-   * @returns Número total de localizações
    */
   async getTotalCount(): Promise<number> {
     return await this.locationsRepository.count();

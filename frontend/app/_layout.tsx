@@ -1,75 +1,45 @@
-import { Quicksand_400Regular, Quicksand_600SemiBold, Quicksand_700Bold, useFonts } from '@expo-google-fonts/quicksand';
-import { Stack } from 'expo-router';
-import { useEffect, useMemo } from 'react';
-import { LogBox, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator, PaperProvider } from 'react-native-paper';
-import { ThemeProvider } from '../contexts/ThemeContext';
-import { useTheme } from '../constants/theme';
+import { Stack, useSegments, router, usePathname } from 'expo-router';
+import { PaperProvider } from 'react-native-paper';
+import { useFonts, Quicksand_400Regular, Quicksand_600SemiBold, Quicksand_700Bold } from '@expo-google-fonts/quicksand';
+import { ThemeProvider } from '../src/contexts/ThemeContext';
+import { useTheme } from '../src/constants/theme';
+import { View, Text, ActivityIndicator, StyleSheet, LogBox } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
 
-function RootLayoutContent() {
-  const [fontsLoaded, fontError] = useFonts({
-    Quicksand_400Regular,
-    Quicksand_600SemiBold,
-    Quicksand_700Bold,
-  });
-  const { theme } = useTheme();
-
-  LogBox.ignoreLogs([
-    'Non-serializable values were found in the navigation state',
-    'VirtualizedLists should never be nested',
-  ]);
-
-  if (!__DEV__) {
-    console.log = () => {};
-    console.warn = () => {};
-    console.error = () => {};
-  }
+function DynamicEditHandler() {
+  const segments = useSegments();
+  const pathname = usePathname();
+  const lastHandledPath = useRef<string | null>(null);
 
   useEffect(() => {
-    if (fontError) {
-      console.error('Error loading fonts:', fontError);
+    if (segments.length === 3 && segments[0] === 'screens') {
+      const section = segments[1];
+      const id = segments[2];
+
+      if (!isNaN(Number(id))) {
+        const formMap: Record<string, string> = {
+          plants: 'PlantsForm',
+          species: 'SpeciesForm',
+          'care-reminders': 'CareRemindersForm',
+          'care-logs': 'CareLogsForm',
+          locations: 'LocationsForm',
+        };
+
+        const formName = formMap[section];
+        if (!formName) return;
+
+        const targetPath = `/screens/${section}/${formName}?id=${id}`;
+
+        // ✅ evita loops infinitos
+        if (pathname === targetPath || lastHandledPath.current === targetPath) return;
+
+        lastHandledPath.current = targetPath;
+        router.replace(targetPath as any); // 🔸 "as any" resolve a tipagem sem impacto funcional
+      }
     }
-  }, [fontError]);
+  }, [segments, pathname]);
 
-  const styles = useMemo(() => StyleSheet.create({
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: theme.colors.background, // #F5F5F5 (light) ou #202225 (dark)
-    },
-    loadingText: {
-      color: theme.colors.text, // #333333 (light) ou #FFFFFF (dark)
-      fontFamily: 'Quicksand_400Regular',
-      marginTop: 8,
-    },
-  }), [theme]);
-
-  if (!fontsLoaded && !fontError) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>
-          Carregando...
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <PaperProvider theme={theme}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: false,
-        }}
-      >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(screens)" options={{ headerShown: false }} />
-      </Stack>
-    </PaperProvider>
-  );
+  return null;
 }
 
 export default function RootLayout() {
@@ -77,5 +47,75 @@ export default function RootLayout() {
     <ThemeProvider>
       <RootLayoutContent />
     </ThemeProvider>
+  );
+}
+
+function RootLayoutContent() {
+  const [fontsLoaded] = useFonts({
+    Quicksand_400Regular,
+    Quicksand_600SemiBold,
+    Quicksand_700Bold,
+  });
+
+  const { theme } = useTheme();
+
+  LogBox.ignoreLogs([
+    'Non-serializable values were found in the navigation state',
+    'VirtualizedLists should never be nested',
+  ]);
+
+  const styles = useMemo(() => StyleSheet.create({
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: theme.colors.text,
+      fontFamily: 'Quicksand_400Regular',
+    },
+  }), [theme]);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Carregando fontes...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <PaperProvider theme={theme}>
+      <DynamicEditHandler />
+
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="screens" />
+
+        <Stack.Screen
+          name="screens/plants/PlantsForm"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="screens/species/SpeciesForm"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="screens/care-reminders/CareRemindersForm"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="screens/care-logs/CareLogsForm"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="screens/locations/LocationsForm"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+      </Stack>
+    </PaperProvider>
   );
 }

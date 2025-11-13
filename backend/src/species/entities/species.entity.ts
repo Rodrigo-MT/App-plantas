@@ -28,9 +28,9 @@ export class Species {
   @Column({ type: 'text', nullable: true })
   idealConditions?: string;
 
-  @ApiPropertyOptional({ description: 'URL da foto da espécie', example: 'https://exemplo.com/especie.jpg' })
-  @Column({ nullable: true })
-  photo?: string;
+  @ApiPropertyOptional({ description: 'Imagem da foto da espécie', example: 'https://exemplo.com/especie.jpg' })
+  @Column({ type: 'text', nullable: true })
+  photo?: string | null;
 
   @ApiProperty({ type: () => [Plant], description: 'Plantas desta espécie' })
   @OneToMany(() => Plant, (plant) => plant.species)

@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useTheme } from '../constants/theme';
+import { useTheme } from '../src/constants/theme';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
@@ -28,5 +28,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href="/dashboard" />;
+  return <Redirect href="/screens/dashboard/DashboardScreen" />;
 }
