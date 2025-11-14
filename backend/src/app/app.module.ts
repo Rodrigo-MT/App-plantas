@@ -25,18 +25,18 @@ import { CareLogsModule } from '../care-logs/care-logs.module';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 5432),
+        port: parseInt(configService.get('DB_PORT', '5432'), 10),
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_NAME', 'plantcare_db'),
         
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         
-        // Sincronização apenas em desenvolvimento
-        synchronize: configService.get('NODE_ENV') !== 'production',
-        
-        // Logging para desenvolvimento
-        logging: configService.get('NODE_ENV') === 'development',
+        // Sincronização controlada por variável de ambiente DB_SYNCHRONIZE (espera 'true'/'false')
+        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+
+        // Logging controlado por variável DB_LOGGING (espera 'true'/'false')
+        logging: configService.get('DB_LOGGING') === 'true',
       }),
       inject: [ConfigService],
     }),

@@ -6,14 +6,14 @@ import {
   Patch, 
   Param, 
   Delete, 
-  ParseUUIDPipe,
+  NotFoundException,
   HttpStatus,
   HttpCode,
   Query 
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CareRemindersService } from './care-reminders.service';
-import { CreateCareReminderDto } from './dto/create-care-reminder.dto';
+import { CreateCareReminderDto, CareReminderType } from './dto/create-care-reminder.dto';
 import { UpdateCareReminderDto } from './dto/update-care-reminder.dto';
 import { CareReminder } from './entities/care-reminder.entity';
 
@@ -46,17 +46,17 @@ export class CareRemindersController {
     description: 'Retorna todos os lembretes de cuidado cadastrados' 
   })
   @ApiQuery({ 
-    name: 'plantId', 
+    name: 'plantName', 
     required: false,
-    description: 'Filtrar por ID da planta',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    description: 'Filtrar por nome da planta',
+    example: 'Rosa do Deserto'
   })
   @ApiQuery({ 
     name: 'type', 
     required: false,
     description: 'Filtrar por tipo de cuidado',
     example: 'watering',
-    enum: ['watering', 'fertilizing', 'pruning', 'sunlight', 'other']
+    enum: Object.values(CareReminderType)
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -64,11 +64,11 @@ export class CareRemindersController {
     type: [CareReminder] 
   })
   findAll(
-    @Query('plantId') plantId?: string,
+    @Query('plantName') plantName?: string,
     @Query('type') type?: string,
   ): Promise<CareReminder[]> {
-    if (plantId) {
-      return this.careRemindersService.findByPlantId(plantId);
+    if (plantName) {
+      return this.careRemindersService.findByPlantName(plantName);
     }
     if (type) {
       return this.careRemindersService.findByType(type);
@@ -118,16 +118,14 @@ export class CareRemindersController {
     return this.careRemindersService.findActive();
   }
 
-  @Get(':id')
+  @Get(':plantName/:type/:nextDue')
   @ApiOperation({ 
-    summary: 'Buscar lembrete por ID',
-    description: 'Retorna os detalhes completos de um lembrete específico' 
+    summary: 'Buscar lembrete por identificador composto',
+    description: 'Retorna os detalhes completos de um lembrete específico pelo identificador composto (plantName, type, nextDue)' 
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID do lembrete',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
+  @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
+  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lembrete encontrado', 
@@ -137,20 +135,22 @@ export class CareRemindersController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Lembrete não encontrado' 
   })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<CareReminder> {
-    return this.careRemindersService.findOne(id);
+  async findOne(
+    @Param('plantName') plantName: string,
+    @Param('type') type: string,
+    @Param('nextDue') nextDue: string,
+  ): Promise<CareReminder> {
+    return this.careRemindersService.findOneByComposite(plantName, type, nextDue);
   }
 
-  @Patch(':id')
+  @Patch(':plantName/:type/:nextDue')
   @ApiOperation({ 
-    summary: 'Atualizar lembrete',
-    description: 'Atualiza parcialmente os dados de um lembrete existente' 
+    summary: 'Atualizar lembrete por identificador composto',
+    description: 'Atualiza parcialmente os dados de um lembrete usando identificador composto (plantName, type, nextDue)' 
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID do lembrete a ser atualizado',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
+  @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
+  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lembrete atualizado com sucesso', 
@@ -164,23 +164,25 @@ export class CareRemindersController {
     status: HttpStatus.BAD_REQUEST, 
     description: 'Dados inválidos fornecidos' 
   })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
+  async update(
+    @Param('plantName') plantName: string,
+    @Param('type') type: string,
+    @Param('nextDue') nextDue: string,
     @Body() updateCareReminderDto: UpdateCareReminderDto,
   ): Promise<CareReminder> {
-    return this.careRemindersService.update(id, updateCareReminderDto);
+    // resolve composite -> id then call update
+    const reminder = await this.careRemindersService.findOneByComposite(plantName, type, nextDue);
+    return this.careRemindersService.update(reminder.id, updateCareReminderDto);
   }
 
-  @Patch(':id/mark-done')
+  @Patch(':plantName/:type/:nextDue/mark-done')
   @ApiOperation({ 
-    summary: 'Marcar lembrete como concluído',
-    description: 'Marca um lembrete como feito e atualiza a próxima data' 
+    summary: 'Marcar lembrete como concluído por identificador composto',
+    description: 'Marca um lembrete como feito e atualiza a próxima data usando identificador composto' 
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID do lembrete',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
+  @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
+  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lembrete marcado como concluído', 
@@ -190,21 +192,23 @@ export class CareRemindersController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Lembrete não encontrado' 
   })
-  markAsDone(@Param('id', ParseUUIDPipe) id: string): Promise<CareReminder> {
-    return this.careRemindersService.markAsDone(id);
+  async markAsDone(
+    @Param('plantName') plantName: string,
+    @Param('type') type: string,
+    @Param('nextDue') nextDue: string,
+  ): Promise<CareReminder> {
+    return this.careRemindersService.markAsDoneByComposite(plantName, type, nextDue);
   }
 
-  @Delete(':id')
+  @Delete(':plantName/:type/:nextDue')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ 
     summary: 'Remover lembrete',
     description: 'Remove permanentemente um lembrete do sistema' 
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID do lembrete a ser removido',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
+  @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
+  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
   @ApiResponse({ 
     status: HttpStatus.NO_CONTENT, 
     description: 'Lembrete removido com sucesso' 
@@ -213,7 +217,11 @@ export class CareRemindersController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Lembrete não encontrado' 
   })
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.careRemindersService.remove(id);
+  async remove(
+    @Param('plantName') plantName: string,
+    @Param('type') type: string,
+    @Param('nextDue') nextDue: string,
+  ): Promise<void> {
+    return this.careRemindersService.removeByComposite(plantName, type, nextDue);
   }
 }

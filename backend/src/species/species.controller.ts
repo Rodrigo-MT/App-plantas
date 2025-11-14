@@ -6,7 +6,7 @@ import {
   Patch, 
   Param, 
   Delete, 
-  ParseUUIDPipe,
+  NotFoundException,
   HttpStatus,
   HttpCode
 } from '@nestjs/common';
@@ -53,38 +53,15 @@ export class SpeciesController {
     return this.speciesService.findAll();
   }
 
-  @Get(':id')
-  @ApiOperation({ 
-    summary: 'Buscar espécie por ID',
-    description: 'Retorna os detalhes completos de uma espécie específica' 
-  })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da espécie',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Espécie encontrada', 
-    type: Species 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Espécie não encontrada' 
-  })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Species> {
-    return this.speciesService.findOne(id);
-  }
-
-  @Get(':id/can-remove')
+  @Get(':name/can-remove')
   @ApiOperation({ 
     summary: 'Verificar se espécie pode ser removida',
-    description: 'Verifica se uma espécie não possui plantas associadas e pode ser removida' 
+    description: 'Verifica se uma espécie não possui plantas associadas e pode ser removida (busca por nome)' 
   })
   @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da espécie',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    name: 'name', 
+    description: 'Nome da espécie',
+    example: 'Monstera deliciosa'
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -97,19 +74,46 @@ export class SpeciesController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Espécie não encontrada' 
   })
-  canBeRemoved(@Param('id', ParseUUIDPipe) id: string): Promise<{ canBeRemoved: boolean; plantCount: number }> {
-    return this.speciesService.canBeRemoved(id);
+  async canBeRemoved(@Param('name') name: string): Promise<{ canBeRemoved: boolean; plantCount: number }> {
+    const found = await this.speciesService.findByName(name);
+    if (!found) throw new NotFoundException(`Espécie '${name}' não encontrada`);
+    return this.speciesService.canBeRemoved(found.id);
   }
 
-  @Patch(':id')
+  @Get(':name')
+  @ApiOperation({ 
+    summary: 'Buscar espécie por nome',
+    description: 'Retorna os detalhes completos de uma espécie específica pelo nome' 
+  })
+  @ApiParam({ 
+    name: 'name', 
+    description: 'Nome da espécie',
+    example: 'Monstera deliciosa'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Espécie encontrada', 
+    type: Species 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Espécie não encontrada' 
+  })
+  async findOne(@Param('name') name: string): Promise<Species> {
+    const found = await this.speciesService.findByName(name);
+    if (!found) throw new NotFoundException(`Espécie '${name}' não encontrada`);
+    return found;
+  }
+
+  @Patch(':name')
   @ApiOperation({ 
     summary: 'Atualizar espécie',
     description: 'Atualiza parcialmente os dados de uma espécie existente' 
   })
   @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da espécie a ser atualizada',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    name: 'name', 
+    description: 'Nome da espécie a ser atualizada',
+    example: 'Monstera deliciosa'
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -124,23 +128,25 @@ export class SpeciesController {
     status: HttpStatus.BAD_REQUEST, 
     description: 'Dados inválidos fornecidos ou nome duplicado' 
   })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
+  async update(
+    @Param('name') name: string,
     @Body() updateSpeciesDto: UpdateSpeciesDto,
   ): Promise<Species> {
-    return this.speciesService.update(id, updateSpeciesDto);
+    const found = await this.speciesService.findByName(name);
+    if (!found) throw new NotFoundException(`Espécie '${name}' não encontrada`);
+    return this.speciesService.update(found.id, updateSpeciesDto);
   }
 
-  @Delete(':id')
+  @Delete(':name')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ 
     summary: 'Remover espécie',
     description: 'Remove permanentemente uma espécie do sistema' 
   })
   @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da espécie a ser removida',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    name: 'name', 
+    description: 'Nome da espécie a ser removida',
+    example: 'Monstera deliciosa'
   })
   @ApiResponse({ 
     status: HttpStatus.NO_CONTENT, 
@@ -154,7 +160,9 @@ export class SpeciesController {
     status: HttpStatus.BAD_REQUEST, 
     description: 'Espécie não pode ser removida pois possui plantas associadas' 
   })
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.speciesService.remove(id);
+  async remove(@Param('name') name: string): Promise<void> {
+    const found = await this.speciesService.findByName(name);
+    if (!found) throw new NotFoundException(`Espécie '${name}' não encontrada`);
+    return this.speciesService.remove(found.id);
   }
 }

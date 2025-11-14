@@ -1,88 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { Location } from './entities/location.entity';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 
 @Injectable()
-export class LocationsService implements OnModuleInit {
+export class LocationsService {
   constructor(
     @InjectRepository(Location)
     private locationsRepository: Repository<Location>,
   ) {}
 
-  /**
-   * Executado automaticamente quando o módulo é inicializado
-   */
-  async onModuleInit() {
-    await this.seedDefaultLocations();
-  }
-
-  /**
-   * Cria localizações padrão se não existirem
-   */
-  private async seedDefaultLocations(): Promise<void> {
-    try {
-      const existingCount = await this.locationsRepository.count();
-      
-      if (existingCount === 0) {
-        console.log('🌱 Creating default locations...');
-        
-        const defaultLocations = [
-          {
-            name: 'Sala de Estar',
-            type: 'indoor',
-            sunlight: 'partial',
-            humidity: 'medium',
-            description: 'Ambiente interno com luz indireta',
-            photo: 'https://example.com/sala-estar.jpg',
-          },
-          {
-            name: 'Jardim',
-            type: 'garden',
-            sunlight: 'full',
-            humidity: 'high',
-            description: 'Área externa com sol direto',
-            photo: 'https://example.com/jardim.jpg',
-          },
-          {
-            name: 'Varanda',
-            type: 'balcony',
-            sunlight: 'partial',
-            humidity: 'medium',
-            description: 'Varanda com luz solar da manhã',
-            photo: 'https://example.com/varanda.jpg',
-          },
-          {
-            name: 'Terraço',
-            type: 'terrace',
-            sunlight: 'full',
-            humidity: 'low',
-            description: 'Terraço exposto ao sol',
-            photo: 'https://example.com/terrace.jpg',
-          },
-          {
-            name: 'Quintal',
-            type: 'outdoor',
-            sunlight: 'shade',
-            humidity: 'high',
-            description: 'Área sombreada do quintal',
-            photo: 'https://example.com/quintal.jpg',
-          }
-        ];
-
-        const locationsToCreate = this.locationsRepository.create(defaultLocations);
-        await this.locationsRepository.save(locationsToCreate);
-        
-        console.log(`✅ Created ${locationsToCreate.length} default locations`);
-      } else {
-        console.log(`✅ Locations already exist in database (${existingCount} records)`);
-      }
-    } catch (error) {
-      console.error('❌ Error creating default locations:', error);
-    }
-  }
+ 
 
   /**
    * Cria uma nova localização no sistema
@@ -91,10 +21,41 @@ export class LocationsService implements OnModuleInit {
    */
   async create(createLocationDto: CreateLocationDto): Promise<Location> {
     try {
+      const { name, type, sunlight, humidity, description, photo } = createLocationDto as any;
+
+      if (!name?.trim()) {
+        throw new BadRequestException('O nome da localização é obrigatório.');
+      }
+      // Nome: permitir letras, números, espaços e acentos
+      if (!/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+$/.test(name)) {
+        throw new BadRequestException('O nome da localização contém caracteres inválidos.');
+      }
+
+      // Verifica duplicata por nome (case-insensitive / similar)
+      const existing = await this.findByName(name);
+      if (existing) {
+        throw new BadRequestException(`Já existe uma localização com o nome '${name}'.`);
+      }
+
+      if (!description?.trim()) {
+        throw new BadRequestException('A descrição da localização é obrigatória.');
+      }
+      if (description && description.length > 500) {
+        throw new BadRequestException('A descrição deve ter no máximo 500 caracteres.');
+      }
+
+      // Allow either data:image/* base64 strings or http(s) URLs. Treat empty as absent.
+      if (photo && typeof photo === 'string' && !photo.trim().length) {
+        // empty string -> treat as not provided
+      } else if (photo && typeof photo === 'string' && !photo.startsWith('data:image/') && !photo.startsWith('http')) {
+        throw new BadRequestException('A imagem enviada deve ser um arquivo de imagem válido');
+      }
+
       const location = this.locationsRepository.create(createLocationDto);
       return await this.locationsRepository.save(location);
     } catch (error) {
-      throw new BadRequestException('Erro ao criar localização: ' + error.message);
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('Erro ao criar localização: ' + (error?.message || String(error)));
     }
   }
 
@@ -160,10 +121,44 @@ export class LocationsService implements OnModuleInit {
     const location = await this.findOne(id); // Valida se a localização existe
     
     try {
-      const updated = this.locationsRepository.merge(location, updateLocationDto);
+      const updateData: any = { ...updateLocationDto };
+
+      if (updateLocationDto.name !== undefined) {
+        if (!updateLocationDto.name?.trim()) {
+          throw new BadRequestException('O nome da localização não pode ser vazio.');
+        }
+        if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/.test(updateLocationDto.name)) {
+          throw new BadRequestException('O nome da localização não pode conter números ou caracteres especiais.');
+        }
+        // verifica duplicata (exceto a atual)
+        const existing = await this.findByName(updateLocationDto.name);
+        if (existing && existing.id !== id) {
+          throw new BadRequestException(`Já existe uma localização com o nome '${updateLocationDto.name}'.`);
+        }
+      }
+
+      if (updateLocationDto.description !== undefined) {
+        if (!updateLocationDto.description?.trim()) {
+          throw new BadRequestException('A descrição não pode ser vazia.');
+        }
+        if (updateLocationDto.description.length > 500) {
+          throw new BadRequestException('A descrição deve ter no máximo 500 caracteres.');
+        }
+      }
+
+      if (updateLocationDto.photo !== undefined) {
+        if (updateLocationDto.photo === null || updateLocationDto.photo === '') {
+          updateData.photo = null;
+        } else if (typeof updateLocationDto.photo === 'string' && !(updateLocationDto.photo.startsWith('data:image/') || updateLocationDto.photo.startsWith('http')) ) {
+          throw new BadRequestException('A imagem enviada deve ser um arquivo de imagem válido');
+        }
+      }
+
+      const updated = this.locationsRepository.merge(location, updateData);
       return await this.locationsRepository.save(updated);
     } catch (error) {
-      throw new BadRequestException('Erro ao atualizar localização: ' + error.message);
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('Erro ao atualizar localização: ' + (error?.message || String(error)));
     }
   }
 
@@ -201,16 +196,31 @@ export class LocationsService implements OnModuleInit {
    * @returns Contagem de plantas por localização
    */
   async getLocationStats(): Promise<{ locationId: string; locationName: string; plantCount: number }[]> {
-    return await this.locationsRepository
-      .createQueryBuilder('location')
-      .leftJoin('location.plants', 'plant')
-      .select('location.id', 'locationId')
-      .addSelect('location.name', 'locationName')
-      .addSelect('COUNT(plant.id)', 'plantCount')
-      .groupBy('location.id')
-      .addGroupBy('location.name')
-      .orderBy('plantCount', 'DESC')
-      .getRawMany();
+    try {
+      // Use a raw query builder and normalize the plantCount to a number
+      const raws = await this.locationsRepository
+        .createQueryBuilder('location')
+        .leftJoin('location.plants', 'plant')
+        .select('location.id', 'locationId')
+        .addSelect('location.name', 'locationName')
+        // Cast count to integer in Postgres to avoid string results, but normalize just in case
+        .addSelect('COUNT(plant.id)', 'plantCount')
+        .groupBy('location.id')
+        .addGroupBy('location.name')
+  // Order by the COUNT expression directly to avoid Postgres alias resolution issues
+  .orderBy('COUNT(plant.id)', 'DESC')
+        .getRawMany();
+
+      // Normalize plantCount to number (TypeORM may return string for COUNT)
+      return raws.map((r: any) => ({
+        locationId: r.locationId,
+        locationName: r.locationName,
+        plantCount: typeof r.plantCount === 'string' ? parseInt(r.plantCount, 10) || 0 : Number(r.plantCount) || 0,
+      }));
+    } catch (error) {
+      // Throw a Nest-friendly 500 with context (will be returned as Internal Server Error to the client)
+      throw new InternalServerErrorException('Erro ao calcular estatísticas de localizações: ' + (error?.message || String(error)));
+    }
   }
 
   /**
@@ -239,5 +249,35 @@ export class LocationsService implements OnModuleInit {
    */
   async getTotalCount(): Promise<number> {
     return await this.locationsRepository.count();
+  }
+
+  /**
+   * Busca localização por nome
+   * @param name Nome da localização
+   */
+  async findByName(name: string): Promise<Location | null> {
+    if (!name) return null;
+    const trimmed = name.trim();
+
+    // 1) Exact case-insensitive match
+    let found = await this.locationsRepository.findOne({ where: { name: ILike(trimmed) } });
+    if (found) return found;
+
+    // 2) Partial match
+    found = await this.locationsRepository.findOne({ where: { name: ILike(`%${trimmed}%`) } });
+    if (found) return found;
+
+    // 3) Fallback: load all and compare normalized strings (strip diacritics, lowercase, trim)
+    const all = await this.locationsRepository.find();
+    const normalize = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ');
+
+    const target = normalize(trimmed);
+    return all.find((l) => normalize(l.name) === target) || null;
   }
 }

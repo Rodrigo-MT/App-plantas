@@ -6,7 +6,7 @@ import {
   Patch, 
   Param, 
   Delete, 
-  ParseUUIDPipe,
+  NotFoundException,
   HttpStatus,
   HttpCode,
   Query 
@@ -95,39 +95,15 @@ export class LocationsController {
   getStats(): Promise<{ locationId: string; locationName: string; plantCount: number }[]> {
     return this.locationsService.getLocationStats();
   }
-
-  @Get(':id')
-  @ApiOperation({ 
-    summary: 'Buscar localização por ID',
-    description: 'Retorna os detalhes completos de uma localização específica' 
-  })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da localização',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Localização encontrada', 
-    type: Location 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Localização não encontrada' 
-  })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Location> {
-    return this.locationsService.findOne(id);
-  }
-
-  @Get(':id/is-empty')
+  @Get(':name/is-empty')
   @ApiOperation({ 
     summary: 'Verificar se localização está vazia',
     description: 'Verifica se uma localização não possui plantas associadas' 
   })
   @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da localização',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    name: 'name', 
+    description: 'Nome da localização',
+    example: 'Sala de Estar'
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -140,20 +116,47 @@ export class LocationsController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Localização não encontrada' 
   })
-  async isEmpty(@Param('id', ParseUUIDPipe) id: string): Promise<{ isEmpty: boolean }> {
-    const isEmpty = await this.locationsService.isEmpty(id);
+  async isEmpty(@Param('name') name: string): Promise<{ isEmpty: boolean }> {
+    const found = await this.locationsService.findByName(name);
+    if (!found) throw new NotFoundException(`Localização '${name}' não encontrada`);
+    const isEmpty = await this.locationsService.isEmpty(found.id);
     return { isEmpty };
   }
 
-  @Patch(':id')
+  @Get(':name')
+  @ApiOperation({ 
+    summary: 'Buscar localização por nome',
+    description: 'Retorna os detalhes completos de uma localização específica pelo nome' 
+  })
+  @ApiParam({ 
+    name: 'name', 
+    description: 'Nome da localização',
+    example: 'Sala de Estar'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Localização encontrada', 
+    type: Location 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Localização não encontrada' 
+  })
+  async findOne(@Param('name') name: string): Promise<Location> {
+    const found = await this.locationsService.findByName(name);
+    if (!found) throw new NotFoundException(`Localização '${name}' não encontrada`);
+    return found;
+  }
+
+  @Patch(':name')
   @ApiOperation({ 
     summary: 'Atualizar localização',
     description: 'Atualiza parcialmente os dados de uma localização existente' 
   })
   @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da localização a ser atualizada',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    name: 'name', 
+    description: 'Nome da localização a ser atualizada',
+    example: 'Sala de Estar'
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -168,23 +171,25 @@ export class LocationsController {
     status: HttpStatus.BAD_REQUEST, 
     description: 'Dados inválidos fornecidos' 
   })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
+  async update(
+    @Param('name') name: string,
     @Body() updateLocationDto: UpdateLocationDto,
   ): Promise<Location> {
-    return this.locationsService.update(id, updateLocationDto);
+    const found = await this.locationsService.findByName(name);
+    if (!found) throw new NotFoundException(`Localização '${name}' não encontrada`);
+    return this.locationsService.update(found.id, updateLocationDto);
   }
 
-  @Delete(':id')
+  @Delete(':name')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ 
     summary: 'Remover localização',
     description: 'Remove permanentemente uma localização do sistema' 
   })
   @ApiParam({ 
-    name: 'id', 
-    description: 'UUID da localização a ser removida',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    name: 'name', 
+    description: 'Nome da localização a ser removida',
+    example: 'Sala de Estar'
   })
   @ApiResponse({ 
     status: HttpStatus.NO_CONTENT, 
@@ -198,7 +203,9 @@ export class LocationsController {
     status: HttpStatus.BAD_REQUEST, 
     description: 'Localização não pode ser removida pois possui plantas associadas' 
   })
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.locationsService.remove(id);
+  async remove(@Param('name') name: string): Promise<void> {
+    const found = await this.locationsService.findByName(name);
+    if (!found) throw new NotFoundException(`Localização '${name}' não encontrada`);
+    return this.locationsService.remove(found.id);
   }
 }

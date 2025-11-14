@@ -3,6 +3,14 @@ import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+// Node built-ins; tsserver in some editors may lack node types — ignore TS here
+// @ts-ignore
+import { fileURLToPath } from 'url';
+// @ts-ignore
+import path from 'path';
+
+// ESM doesn't provide __dirname by default; compute it from import.meta.url
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
   {
@@ -20,7 +28,7 @@ export default tseslint.config(
       sourceType: 'commonjs',
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        tsconfigRootDir: __dirname,
       },
     },
   },

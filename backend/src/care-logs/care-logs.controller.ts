@@ -6,14 +6,14 @@ import {
   Patch, 
   Param, 
   Delete, 
-  ParseUUIDPipe,
+  NotFoundException,
   HttpStatus,
   HttpCode,
   Query 
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CareLogsService } from './care-logs.service';
-import { CreateCareLogDto } from './dto/create-care-log.dto';
+import { CreateCareLogDto, CareLogType } from './dto/create-care-log.dto';
 import { UpdateCareLogDto } from './dto/update-care-log.dto';
 import { CareLog } from './entities/care-log.entity';
 
@@ -46,17 +46,17 @@ export class CareLogsController {
     description: 'Retorna todos os logs de cuidado cadastrados' 
   })
   @ApiQuery({ 
-    name: 'plantId', 
+    name: 'plantName', 
     required: false,
-    description: 'Filtrar por ID da planta',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    description: 'Filtrar por nome da planta',
+    example: 'Rosa do Deserto'
   })
   @ApiQuery({ 
     name: 'type', 
     required: false,
     description: 'Filtrar por tipo de cuidado',
     example: 'watering',
-    enum: ['watering', 'fertilizing', 'pruning', 'repotting', 'cleaning', 'other']
+    enum: Object.values(CareLogType)
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -64,11 +64,11 @@ export class CareLogsController {
     type: [CareLog] 
   })
   findAll(
-    @Query('plantId') plantId?: string,
+    @Query('plantName') plantName?: string,
     @Query('type') type?: string,
   ): Promise<CareLog[]> {
-    if (plantId) {
-      return this.careLogsService.findByPlantId(plantId);
+    if (plantName) {
+      return this.careLogsService.findByPlantName(plantName);
     }
     if (type) {
       return this.careLogsService.findByType(type);
@@ -120,16 +120,14 @@ export class CareLogsController {
     return this.careLogsService.getCareStats();
   }
 
-  @Get(':id')
+  @Get(':plantName/:type/:date')
   @ApiOperation({ 
-    summary: 'Buscar log por ID',
-    description: 'Retorna os detalhes completos de um log específico' 
+    summary: 'Buscar log por identificador composto',
+    description: 'Retorna os detalhes completos de um log específico pelo identificador composto (plantName, type, date)' 
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID do log',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
+  @ApiParam({ name: 'type', description: 'Tipo do cuidado', example: 'watering' })
+  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2024-01-15' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Log encontrado', 
@@ -139,20 +137,22 @@ export class CareLogsController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Log não encontrado' 
   })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<CareLog> {
-    return this.careLogsService.findOne(id);
+  async findOne(
+    @Param('plantName') plantName: string,
+    @Param('type') type: string,
+    @Param('date') date: string,
+  ): Promise<CareLog> {
+    return this.careLogsService.findOneByComposite(plantName, type, date);
   }
 
-  @Patch(':id')
+  @Patch(':plantName/:type/:date')
   @ApiOperation({ 
-    summary: 'Atualizar log',
-    description: 'Atualiza parcialmente os dados de um log existente' 
+    summary: 'Atualizar log por identificador composto',
+    description: 'Atualiza parcialmente os dados de um log usando identificador composto (plantName, type, date)' 
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID do log a ser atualizado',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
+  @ApiParam({ name: 'type', description: 'Tipo do cuidado', example: 'watering' })
+  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2024-01-15' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Log atualizado com sucesso', 
@@ -166,24 +166,25 @@ export class CareLogsController {
     status: HttpStatus.BAD_REQUEST, 
     description: 'Dados inválidos fornecidos' 
   })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
+  async update(
+    @Param('plantName') plantName: string,
+    @Param('type') type: string,
+    @Param('date') date: string,
     @Body() updateCareLogDto: UpdateCareLogDto,
   ): Promise<CareLog> {
-    return this.careLogsService.update(id, updateCareLogDto);
+    const careLog = await this.careLogsService.findOneByComposite(plantName, type, date);
+    return this.careLogsService.update(careLog.id, updateCareLogDto);
   }
 
-  @Delete(':id')
+  @Delete(':plantName/:type/:date')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ 
     summary: 'Remover log',
     description: 'Remove permanentemente um log do sistema' 
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'UUID do log a ser removido',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
+  @ApiParam({ name: 'type', description: 'Tipo do cuidado', example: 'watering' })
+  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2024-01-15' })
   @ApiResponse({ 
     status: HttpStatus.NO_CONTENT, 
     description: 'Log removido com sucesso' 
@@ -192,7 +193,11 @@ export class CareLogsController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Log não encontrado' 
   })
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.careLogsService.remove(id);
+  async remove(
+    @Param('plantName') plantName: string,
+    @Param('type') type: string,
+    @Param('date') date: string,
+  ): Promise<void> {
+    return this.careLogsService.removeByComposite(plantName, type, date);
   }
 }

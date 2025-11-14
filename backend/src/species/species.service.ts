@@ -1,88 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { Species } from './entities/species.entity';
 import { CreateSpeciesDto } from './dto/create-species.dto';
 import { UpdateSpeciesDto } from './dto/update-species.dto';
 
 @Injectable()
-export class SpeciesService implements OnModuleInit {
+export class SpeciesService {
   constructor(
     @InjectRepository(Species)
     private speciesRepository: Repository<Species>,
   ) {}
 
-  /**
-   * Executado automaticamente quando o módulo é inicializado
-   */
-  async onModuleInit() {
-    await this.seedDefaultSpecies();
-  }
-
-  /**
-   * Cria espécies padrão se não existirem
-   */
-  private async seedDefaultSpecies(): Promise<void> {
-    try {
-      const existingCount = await this.speciesRepository.count();
-      
-      if (existingCount === 0) {
-        console.log('🌱 Creating default species...');
-        
-        const defaultSpecies = [
-          {
-            name: 'Monstera deliciosa',
-            commonName: 'Costela de Adão',
-            description: 'Planta tropical com folhas grandes e recortadas.',
-            careInstructions: 'Luz indireta, rega moderada.',
-            idealConditions: 'Sol parcial, umidade média.',
-            photo: 'https://example.com/monstera.jpg',
-          },
-          {
-            name: 'Ficus lyrata',
-            commonName: 'Figueira-lira',
-            description: 'Planta com folhas grandes em forma de lira.',
-            careInstructions: 'Luz brilhante, rega quando o solo estiver seco.',
-            idealConditions: 'Sol pleno, umidade alta.',
-            photo: 'https://example.com/ficus-lyrata.jpg',
-          },
-          {
-            name: 'Sansevieria trifasciata',
-            commonName: 'Espada-de-são-jorge',
-            description: 'Planta resistente com folhas eretas e pontiagudas.',
-            careInstructions: 'Luz indireta, pouca rega.',
-            idealConditions: 'Sol ou sombra, tolerante à seca.',
-            photo: 'https://example.com/sansevieria.jpg',
-          },
-          {
-            name: 'Epipremnum aureum',
-            commonName: 'Jiboia',
-            description: 'Planta trepadeira de fácil cultivo e crescimento rápido.',
-            careInstructions: 'Luz indireta, rega moderada.',
-            idealConditions: 'Meia-sombra, solo bem drenado.',
-            photo: 'https://example.com/jiboia.jpg',
-          },
-          {
-            name: 'Zamioculcas zamiifolia',
-            commonName: 'Zamioculca',
-            description: 'Planta muito resistente com folhas brilhantes e carnudas.',
-            careInstructions: 'Luz indireta, pouca rega.',
-            idealConditions: 'Sombra a meia-sombra, solo seco.',
-            photo: 'https://example.com/zamioculca.jpg',
-          }
-        ];
-
-        const speciesToCreate = this.speciesRepository.create(defaultSpecies);
-        await this.speciesRepository.save(speciesToCreate);
-        
-        console.log(`✅ Created ${speciesToCreate.length} default species`);
-      } else {
-        console.log(`✅ Species already exist in database (${existingCount} records)`);
-      }
-    } catch (error) {
-      console.error('❌ Error creating default species:', error);
-    }
-  }
+ 
 
   /**
    * Cria uma nova espécie no sistema
@@ -91,13 +21,58 @@ export class SpeciesService implements OnModuleInit {
    */
   async create(createSpeciesDto: CreateSpeciesDto): Promise<Species> {
     try {
-      // Verifica se já existe uma espécie com o mesmo nome
-      const existingSpecies = await this.speciesRepository.findOne({
-        where: { name: createSpeciesDto.name }
-      });
+  const { name, commonName, description, careInstructions, idealConditions, photo } = createSpeciesDto as any;
 
-      if (existingSpecies) {
-        throw new BadRequestException('Já existe uma espécie com este nome');
+      if (!name?.trim()) {
+        throw new BadRequestException('O nome científico da espécie é obrigatório.');
+      }
+      if (!commonName?.trim()) {
+        throw new BadRequestException('O nome comum da espécie é obrigatório.');
+      }
+
+      // Nome: não permitir números
+      if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/.test(name) || !/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/.test(commonName)) {
+        throw new BadRequestException('Os nomes não podem conter números ou caracteres especiais.');
+      }
+
+      // Verifica se já existe uma espécie com o mesmo nome ou nome comum (verificação estrita, case-insensitive)
+      const trimmed = name.trim();
+      const trimmedCommon = commonName.trim();
+      const existingExact = await this.speciesRepository.findOne({
+        where: [
+          { name: ILike(trimmed) },
+          { commonName: ILike(trimmed) },
+          { name: ILike(trimmedCommon) },
+          { commonName: ILike(trimmedCommon) },
+        ],
+      });
+      if (existingExact) {
+        throw new BadRequestException('Já existe uma espécie com este nome ou nome comum.');
+      }
+
+      if (!description?.trim()) {
+        throw new BadRequestException('A descrição da espécie é obrigatória.');
+      }
+      if (!careInstructions?.trim()) {
+        throw new BadRequestException('As instruções de cuidado são obrigatórias.');
+      }
+      if (!idealConditions?.trim()) {
+        throw new BadRequestException('As condições ideais são obrigatórias.');
+      }
+
+      if (description && description.length > 500) {
+        throw new BadRequestException('A descrição deve ter no máximo 500 caracteres.');
+      }
+      if (careInstructions && careInstructions.length > 500) {
+        throw new BadRequestException('As instruções de cuidado devem ter no máximo 500 caracteres.');
+      }
+      if (idealConditions && idealConditions.length > 500) {
+        throw new BadRequestException('As condições ideais devem ter no máximo 500 caracteres.');
+      }
+
+      // Allow base64 data URIs or http(s) URLs; ignore empty string
+      if (photo && typeof photo === 'string' && !(photo.startsWith('data:image/') || photo.startsWith('http'))) {
+        throw new BadRequestException('A imagem enviada deve ser um arquivo de imagem válido');
       }
 
       const species = this.speciesRepository.create(createSpeciesDto);
@@ -106,7 +81,7 @@ export class SpeciesService implements OnModuleInit {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Erro ao criar espécie: ' + error.message);
+      throw new BadRequestException('Erro ao criar espécie: ' + (error?.message || String(error)));
     }
   }
 
@@ -144,9 +119,35 @@ export class SpeciesService implements OnModuleInit {
    * @returns Espécie encontrada
    */
   async findByName(name: string): Promise<Species | null> {
-    return await this.speciesRepository.findOne({
-      where: { name },
-    });
+    if (!name) return null;
+    const trimmed = name.trim();
+
+    // 1) Try matching scientific name (case-insensitive)
+    let found = await this.speciesRepository.findOne({ where: { name: ILike(trimmed) } });
+    if (found) return found;
+
+    // 2) Try matching commonName
+    found = await this.speciesRepository.findOne({ where: { commonName: ILike(trimmed) } });
+    if (found) return found;
+
+    // 3) Partial matches
+    found = await this.speciesRepository.findOne({ where: { name: ILike(`%${trimmed}%`) } });
+    if (found) return found;
+    found = await this.speciesRepository.findOne({ where: { commonName: ILike(`%${trimmed}%`) } });
+    if (found) return found;
+
+    // 4) Fallback normalized comparison
+    const all = await this.speciesRepository.find();
+    const normalize = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ');
+
+    const target = normalize(trimmed);
+    return all.find((sp) => normalize(sp.name) === target || (sp.commonName && normalize(sp.commonName) === target)) || null;
   }
 
   /**
@@ -161,13 +162,62 @@ export class SpeciesService implements OnModuleInit {
     try {
       // Se estiver atualizando o nome, verifica duplicata
       if (updateSpeciesDto.name && updateSpeciesDto.name !== species.name) {
-        const existingSpecies = await this.findByName(updateSpeciesDto.name);
-        if (existingSpecies) {
+        const trimmedNew = updateSpeciesDto.name.trim();
+        const existingSpecies = await this.speciesRepository.findOne({
+          where: [{ name: ILike(trimmedNew) }, { commonName: ILike(trimmedNew) }],
+        });
+        if (existingSpecies && existingSpecies.id !== species.id) {
           throw new BadRequestException('Já existe uma espécie com este nome');
         }
       }
 
-      const updated = this.speciesRepository.merge(species, updateSpeciesDto);
+      const updateData: any = { ...updateSpeciesDto };
+      // Validações adicionais
+      if (updateData.name !== undefined) {
+        if (!updateData.name?.trim()) {
+          throw new BadRequestException('O nome científico da espécie não pode ser vazio.');
+        }
+        if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/.test(updateData.name)) {
+          throw new BadRequestException('O nome científico não pode conter números ou caracteres especiais.');
+        }
+      }
+
+      if (updateData.description !== undefined) {
+        if (!updateData.description?.trim()) {
+          throw new BadRequestException('A descrição não pode ser vazia.');
+        }
+        if (updateData.description.length > 500) {
+          throw new BadRequestException('A descrição deve ter no máximo 500 caracteres.');
+        }
+      }
+
+      if (updateData.careInstructions !== undefined) {
+        if (!updateData.careInstructions?.trim()) {
+          throw new BadRequestException('As instruções de cuidado não podem ser vazias.');
+        }
+        if (updateData.careInstructions.length > 500) {
+          throw new BadRequestException('As instruções de cuidado devem ter no máximo 500 caracteres.');
+        }
+      }
+
+      if (updateData.idealConditions !== undefined) {
+        if (!updateData.idealConditions?.trim()) {
+          throw new BadRequestException('As condições ideais não podem ser vazias.');
+        }
+        if (updateData.idealConditions.length > 500) {
+          throw new BadRequestException('As condições ideais devem ter no máximo 500 caracteres.');
+        }
+      }
+
+      if (updateData.photo !== undefined) {
+        if (updateData.photo === null || updateData.photo === '') {
+          updateData.photo = null;
+        } else if (typeof updateData.photo === 'string' && !(updateData.photo.startsWith('data:image/') || updateData.photo.startsWith('http'))) {
+          throw new BadRequestException('A imagem enviada deve ser um arquivo de imagem válido');
+        }
+      }
+
+      const updated = this.speciesRepository.merge(species, updateData);
       return await this.speciesRepository.save(updated);
     } catch (error) {
       if (error instanceof BadRequestException) {
