@@ -113,27 +113,27 @@ O backend expõe endpoints para gerenciar plantas, espécies, localizações, le
 	cd backend
 	npm install
 
-	# Importante — ordem recomendada para bancos totalmente novos
-	# -------------------------------------------------------
-	# Em alguns cenários (especialmente quando o banco foi recém-criado),
-	# a primeira inicialização da aplicação NestJS precisa ocorrer antes de
-	# rodar comandos de migração/seed. Isso acontece porque a aplicação pode
-	# criar estruturas ou preparar o ambiente na primeira execução; tentar
-	# rodar `npm run migrate:run` em um banco totalmente vazio pode gerar
-	# erros (por exemplo, tabelas ausentes) e levar a confusão.
+	 Importante — ordem recomendada para bancos totalmente novos
+	 -------------------------------------------------------
+	 Em alguns cenários (especialmente quando o banco foi recém-criado),
+	 a primeira inicialização da aplicação NestJS precisa ocorrer antes de
+	 rodar comandos de migração/seed. Isso acontece porque a aplicação pode
+	 criar estruturas ou preparar o ambiente na primeira execução; tentar
+	 rodar `npm run migrate:run` em um banco totalmente vazio pode gerar
+	 erros (por exemplo, tabelas ausentes) e levar a confusão.
 
-	# Fluxo recomendado quando o banco é novo:
-	# 1) Inicie o backend uma vez e aguarde que ele suba (npm run start:dev).
-	#    Verifique os logs para confirmar que a conexão com o banco foi estabelecida.
-	# 2) Execute as migrations (se necessário):
-	#    npm run migrate:run
-	# 3) Rode o seed idempotente para repopular dados de exemplo (opcional):
-	#    npm run seed
+	 Fluxo recomendado quando o banco é novo:
+	 1) Inicie o backend uma vez e aguarde que ele suba (npm run start:dev).
+	    Verifique os logs para confirmar que a conexão com o banco foi estabelecida.
+	 2) Execute as migrations (se necessário):
+	    npm run migrate:run
+	 3) Rode o seed idempotente para repopular dados de exemplo (opcional):
+	    npm run seed
 
-	# Se o banco já possuir o esquema (ou você já rodou migrations antes),
-	# pode executar `npm run migrate:run` diretamente quando necessário.
+	 Se o banco já possuir o esquema (ou você já rodou migrations antes),
+	 pode executar `npm run migrate:run` diretamente quando necessário.
 
-	# Inicie o backend em modo dev (comando final para desenvolvimento):
+	 Inicie o backend em modo dev (comando final para desenvolvimento):
 	npm run start:dev
 
 3. Rode o frontend:
