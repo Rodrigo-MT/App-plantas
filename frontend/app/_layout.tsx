@@ -6,16 +6,19 @@ import { useTheme } from '../src/constants/theme';
 import { View, Text, ActivityIndicator, StyleSheet, LogBox } from 'react-native';
 import { useEffect, useMemo, useRef } from 'react';
 
+
 function DynamicEditHandler() {
   const segments = useSegments();
   const pathname = usePathname();
   const lastHandledPath = useRef<string | null>(null);
 
   useEffect(() => {
+    // Rota do tipo: /screens/plants/123
     if (segments.length === 3 && segments[0] === 'screens') {
       const section = segments[1];
       const id = segments[2];
 
+      // ID numérico => tela de edição
       if (!isNaN(Number(id))) {
         const formMap: Record<string, string> = {
           plants: 'PlantsForm',
@@ -28,13 +31,14 @@ function DynamicEditHandler() {
         const formName = formMap[section];
         if (!formName) return;
 
+        // ✅ Caminho absoluto padronizado
         const targetPath = `/screens/${section}/${formName}?id=${id}`;
 
-        // ✅ evita loops infinitos
+        // Evita loops infinitos
         if (pathname === targetPath || lastHandledPath.current === targetPath) return;
 
         lastHandledPath.current = targetPath;
-        router.replace(targetPath as any); // 🔸 "as any" resolve a tipagem sem impacto funcional
+        router.replace(targetPath as any);
       }
     }
   }, [segments, pathname]);
@@ -94,9 +98,12 @@ function RootLayoutContent() {
 
   return (
     <PaperProvider theme={theme}>
+      {/* 🔥 Redirecionador de rotas dinâmicas */}
       <DynamicEditHandler />
 
+      {/* 🔥 Todas as telas mapeadas ABSOLUTAMENTE */}
       <Stack screenOptions={{ headerShown: false }}>
+        
         <Stack.Screen name="screens" />
 
         <Stack.Screen

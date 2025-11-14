@@ -4,6 +4,7 @@ import { Animated, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../src/constants/theme';
 
+
 export default function ScreensLayout() {
   const { theme } = useTheme();
   const pathname = usePathname();
@@ -128,12 +129,6 @@ export default function ScreensLayout() {
       <Tabs.Screen name="care-reminders/CareRemindersForm" options={{ href: null }} />
       <Tabs.Screen name="care-logs/CareLogsForm" options={{ href: null }} />
       <Tabs.Screen name="locations/LocationsForm" options={{ href: null }} />
-
-      <Tabs.Screen name="plants/[id]" options={{ href: null }} />
-      <Tabs.Screen name="species/[id]" options={{ href: null }} />
-      <Tabs.Screen name="care-reminders/[id]" options={{ href: null }} />
-      <Tabs.Screen name="care-logs/[id]" options={{ href: null }} />
-      <Tabs.Screen name="locations/[id]" options={{ href: null }} />
     </Tabs>
   );
 }
