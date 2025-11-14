@@ -31,9 +31,9 @@ export class Plant {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
-  @ApiPropertyOptional({ description: 'URL da foto da planta', example: 'https://exemplo.com/planta.jpg' })
-  @Column({ nullable: true })
-  photo?: string;
+  @ApiPropertyOptional({ description: 'Imagem da planta'})
+  @Column({ type: 'text', nullable: true })
+  photo?: string | null;
 
   // Relações (mantidas para consultas relacionadas se necessário)
   @ApiProperty({ type: () => Species, description: 'Espécie da planta' })

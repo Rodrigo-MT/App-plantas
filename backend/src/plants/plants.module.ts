@@ -10,6 +10,6 @@ import { LocationsModule } from '../locations/locations.module';
   imports: [TypeOrmModule.forFeature([Plant]), SpeciesModule, LocationsModule],
   controllers: [PlantsController],
   providers: [PlantsService],
-  exports: [PlantsService],
+  exports: [PlantsService, TypeOrmModule], // ✅ exporta TypeOrmModule
 })
 export class PlantsModule {}
