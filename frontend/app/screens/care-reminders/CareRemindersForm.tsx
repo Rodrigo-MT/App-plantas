@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, View, Platform, ActivityIndicator } from 'react-native';
@@ -170,9 +170,39 @@ export default function CareReminderForm() {
       }
       setLoading(false);
     } else {
+      // Reset explícito ao criar novo lembrete para evitar dados residuais
+      reset({
+        plantName: '',
+        type: 'watering',
+        frequency: '7',
+        lastDone: normalizeDate(new Date()),
+        nextDue: normalizeDate(new Date()),
+        notes: '',
+        isActive: true,
+      });
       setLoading(false);
     }
   }, [isEditing, reminder, reset]);
+
+  // Garante reset quando a tela volta a focar e está em modo criação
+  useFocusEffect(
+    useMemo(
+      () => () => {
+        if (!isEditing) {
+          reset({
+            plantName: '',
+            type: 'watering',
+            frequency: '7',
+            lastDone: normalizeDate(new Date()),
+            nextDue: normalizeDate(new Date()),
+            notes: '',
+            isActive: true,
+          });
+        }
+      },
+      [isEditing, reset]
+    )
+  );
 
   const onSubmit = async (data: ReminderFormData) => {
     try {
@@ -260,6 +290,7 @@ export default function CareReminderForm() {
               name="plantName" // ✅ MUDOU: plantId → plantName
               label="Planta *" 
               items={plantOptions}
+              disabled={isEditing} // parte da chave composta
             />
             <HelperText type="error" visible={!!errors.plantName} style={styles.helperText}>
               {errors.plantName?.message ?? ''}
@@ -270,7 +301,8 @@ export default function CareReminderForm() {
               control={control} 
               name="type" 
               label="Tipo de Cuidado *" 
-              items={typeOptions} 
+              items={typeOptions}
+              disabled={isEditing}
             />
             <HelperText type="error" visible={!!errors.type} style={styles.helperText}>
               {errors.type?.message ?? ''}
@@ -304,6 +336,7 @@ export default function CareReminderForm() {
               name="nextDue" 
               label="Próxima Data *" 
               allowFutureDates 
+              disabled={isEditing}
             />
             <HelperText type="error" visible={!!errors.nextDue} style={styles.helperText}>
               {errors.nextDue?.message ?? ''}

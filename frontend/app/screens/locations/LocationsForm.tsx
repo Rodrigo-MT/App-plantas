@@ -71,6 +71,15 @@ export default function LocationsForm() {
     let mounted = true;
     const init = async () => {
       if (!isEditing) {
+        // Reset explícito ao entrar em modo criação
+        reset({
+          name: '',
+          type: 'indoor',
+          sunlight: 'partial',
+          humidity: 'medium',
+          description: '',
+          photo: null,
+        });
         if (mounted) setLoading(false);
         return;
       }

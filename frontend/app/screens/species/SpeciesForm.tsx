@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, View, Platform } from 'react-native';
@@ -76,9 +76,37 @@ export default function SpeciesForm() {
       }
       setLoading(false);
     } else {
+      // Reset explícito ao entrar em modo criação para limpar dados anteriores
+      reset({
+        name: '',
+        commonName: '',
+        description: '',
+        careInstructions: '',
+        idealConditions: '',
+        photo: null,
+      });
       setLoading(false);
     }
   }, [isEditing, speciesData, reset]);
+
+  // Garantir limpeza quando a tela volta a focar e está em modo criação
+  useFocusEffect(
+    useMemo(
+      () => () => {
+        if (!isEditing) {
+          reset({
+            name: '',
+            commonName: '',
+            description: '',
+            careInstructions: '',
+            idealConditions: '',
+            photo: null,
+          });
+        }
+      },
+      [isEditing, reset]
+    )
+  );
 
   const styles = useMemo(() => StyleSheet.create({
     container: {

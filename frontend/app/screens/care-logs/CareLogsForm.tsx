@@ -1,7 +1,7 @@
 // app/screens/care-logs/CareLogsForm.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import {
   ScrollView,
@@ -92,9 +92,35 @@ export default function CareLogsForm() {
       }
       setLoading(false);
     } else {
+      // Reset explícito para limpar qualquer estado residual ao criar novo registro
+      reset({
+        plantName: '',
+        type: 'watering',
+        date: new Date(),
+        notes: '',
+        success: true,
+      });
       setLoading(false);
     }
   }, [isEditing, careLog, reset]);
+
+  // Garante limpeza quando volta a focar em modo criação (caso a tela não tenha sido desmontada)
+  useFocusEffect(
+    useMemo(
+      () => () => {
+        if (!isEditing) {
+          reset({
+            plantName: '',
+            type: 'watering',
+            date: new Date(),
+            notes: '',
+            success: true,
+          });
+        }
+      },
+      [isEditing, reset]
+    )
+  );
 
   // ✅ CORREÇÃO: Options agora usam NOMES como valores
   const plantOptions = useMemo(() => 
@@ -268,7 +294,8 @@ export default function CareLogsForm() {
               control={control} 
               name="plantName" // ✅ MUDOU: plantId → plantName
               label="Planta *" 
-              items={plantOptions} 
+              items={plantOptions}
+              disabled={isEditing} // chave composta - não alterar na edição
             />
             <HelperText type="error" visible={!!errors.plantName} style={styles.helperText}>
               {errors.plantName?.message ?? ''}
@@ -279,7 +306,8 @@ export default function CareLogsForm() {
               control={control} 
               name="type" 
               label="Tipo de Cuidado *" 
-              items={typeOptions} 
+              items={typeOptions}
+              disabled={isEditing}
             />
             <HelperText type="error" visible={!!errors.type} style={styles.helperText}>
               {errors.type?.message ?? ''}
@@ -290,6 +318,7 @@ export default function CareLogsForm() {
               control={control} 
               name="date" 
               label="Data do Cuidado *" 
+              disabled={isEditing}
             />
             <HelperText type="error" visible={!!errors.date} style={styles.helperText}>
               {errors.date?.message ?? ''}

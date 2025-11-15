@@ -8,23 +8,25 @@ interface PickerFieldProps {
   name: string;
   label: string;
   items: { label: string; value: string }[];
+  disabled?: boolean;
 }
 
-export default function PickerField({ control, name, label, items }: PickerFieldProps) {
+export default function PickerField({ control, name, label, items, disabled = false }: PickerFieldProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, disabled && styles.disabledLabel]}>{label}</Text>
       <Controller
         control={control}
         name={name}
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <>
             <RNPickerSelect
-              onValueChange={onChange}
+              onValueChange={disabled ? () => undefined : onChange}
               value={value || ''}
               items={items}
               style={pickerSelectStyles}
               placeholder={{ label: `Selecione ${label.toLowerCase()}`, value: '' }}
+              disabled={disabled}
             />
             {error && <Text style={styles.errorText}>{error.message}</Text>}
           </>
@@ -43,6 +45,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: theme.colors.text,
     fontFamily: theme.fonts.default.fontFamily,
+  },
+  disabledLabel: {
+    opacity: 0.6,
   },
   errorText: {
     color: theme.colors.error,
@@ -76,5 +81,10 @@ const pickerSelectStyles = {
   placeholder: {
     color: theme.colors.text,
     fontFamily: theme.fonts.default.fontFamily,
+  },
+  disabled: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.onSurfaceVariant,
+    opacity: 0.6,
   },
 };

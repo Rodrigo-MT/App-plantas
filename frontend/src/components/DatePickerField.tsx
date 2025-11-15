@@ -21,6 +21,7 @@ interface DatePickerFieldProps {
   allowFutureDates?: boolean;
   maximumDate?: Date;
   minimumDate?: Date;
+  disabled?: boolean;
 }
 
 export default function DatePickerField({
@@ -29,7 +30,8 @@ export default function DatePickerField({
   label,
   allowFutureDates = false,
   maximumDate,
-  minimumDate
+  minimumDate,
+  disabled = false,
 }: DatePickerFieldProps) {
   const { theme } = useTheme();
   const [show, setShow] = useState(false);
@@ -94,6 +96,7 @@ export default function DatePickerField({
   };
 
   const showDatepicker = () => {
+    if (disabled) return;
     setShow(true);
   };
 
@@ -149,6 +152,10 @@ export default function DatePickerField({
       borderRadius: 8,
       backgroundColor: theme.colors.background,
     },
+    dateDisplayDisabled: {
+      backgroundColor: theme.colors.background,
+      opacity: 0.6,
+    },
     dateText: {
       fontSize: 16,
       color: theme.colors.text,
@@ -195,12 +202,14 @@ export default function DatePickerField({
               <input
                 type="date"
                 value={getInputDateValue(value)}
-                onChange={(e) => handleWebDateChange(e, onChange)}
+                onChange={(e) => !disabled && handleWebDateChange(e, onChange)}
                 max={getWebMaxDate()}
                 min={minimumDate ? minimumDate.toISOString().split('T')[0] : undefined}
+                disabled={disabled}
                 style={StyleSheet.flatten([
                   styles.webInput,
                   { borderColor: error ? theme.colors.error : theme.colors.primary },
+                  disabled && { opacity: 0.6 },
                 ])}
               />
             </View>
@@ -208,14 +217,19 @@ export default function DatePickerField({
             <>
               <TouchableOpacity
                 onPress={showDatepicker}
-                style={[styles.dateDisplay, { borderColor: error ? theme.colors.error : theme.colors.primary }]}
+                style={[
+                  styles.dateDisplay,
+                  { borderColor: error ? theme.colors.error : theme.colors.primary },
+                  disabled && styles.dateDisplayDisabled,
+                ]}
+                disabled={disabled}
               >
                 <Text style={styles.dateText}>{getDisplayDate(value)}</Text>
-                <Button mode="outlined" onPress={showDatepicker} style={styles.button} icon="calendar">
+                <Button mode="outlined" onPress={showDatepicker} style={styles.button} icon="calendar" disabled={disabled}>
                   Selecionar
                 </Button>
               </TouchableOpacity>
-              {show && (
+              {show && !disabled && (
                 <DateTimePicker
                   value={value instanceof Date ? value : typeof value === 'string' && value ? new Date(value) : new Date()}
                   mode="date"
@@ -226,7 +240,7 @@ export default function DatePickerField({
                   style={styles.datePicker}
                 />
               )}
-              {show && Platform.OS === 'ios' && (
+              {show && Platform.OS === 'ios' && !disabled && (
                 <View style={styles.iosButtons}>
                   <Button mode="contained" onPress={() => setShow(false)} style={styles.iosButton}>
                     Confirmar
