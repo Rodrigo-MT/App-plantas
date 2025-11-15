@@ -1,5 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+<<<<<<< HEAD
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+=======
+import { useLocalSearchParams, useRouter } from 'expo-router';
+>>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, View, Platform, Alert, ActivityIndicator } from 'react-native';
@@ -124,6 +128,7 @@ export default function LocationsForm() {
     return () => { mounted = false; };
   }, [isEditing, location, reset, id, loadLocations, findLocationById]);
 
+<<<<<<< HEAD
   // Garante que, ao voltar ao foco em modo criação, o formulário esteja limpo
   useFocusEffect(
     useMemo(
@@ -143,6 +148,8 @@ export default function LocationsForm() {
     )
   );
 
+=======
+>>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
   const styles = useMemo(() => StyleSheet.create({
     container: {
       flexGrow: 1,

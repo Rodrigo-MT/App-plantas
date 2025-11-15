@@ -1,5 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+<<<<<<< HEAD
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+=======
+import { useLocalSearchParams, useRouter } from 'expo-router';
+>>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, View, Platform } from 'react-native';
@@ -145,6 +149,7 @@ export default function PlantForm() {
       }
       setLoading(false);
     } else {
+<<<<<<< HEAD
       // Reset explícito quando em modo de criação para evitar dados persistentes
       reset({
         name: '',
@@ -154,10 +159,13 @@ export default function PlantForm() {
         notes: '',
         photo: null,
       });
+=======
+>>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
       setLoading(false);
     }
   }, [isEditing, plant, reset]);
 
+<<<<<<< HEAD
   // Garante limpeza quando a tela volta a focar em modo criação (espelha SpeciesForm)
   useFocusEffect(
     useMemo(
@@ -177,6 +185,8 @@ export default function PlantForm() {
     )
   );
 
+=======
+>>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
   const onSubmit = async (data: PlantFormData) => {
     try {
       setSubmitting(true);
