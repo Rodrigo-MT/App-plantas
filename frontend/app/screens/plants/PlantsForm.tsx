@@ -1,9 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-<<<<<<< HEAD
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-=======
-import { useLocalSearchParams, useRouter } from 'expo-router';
->>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, View, Platform } from 'react-native';
@@ -138,19 +134,17 @@ export default function PlantForm() {
       if (plant) {
         reset({
           name: plant.name || '',
-          speciesName: plant.speciesName || '', // MUDOU: speciesId → speciesName
-          locationName: plant.locationName || '', // MUDOU: locationId → locationName
-          purchaseDate: plant.purchaseDate instanceof Date 
-            ? plant.purchaseDate 
+          speciesName: plant.speciesName || '',
+          locationName: plant.locationName || '',
+          purchaseDate: plant.purchaseDate instanceof Date
+            ? plant.purchaseDate
             : new Date(plant.purchaseDate),
           notes: plant.notes || '',
           photo: plant.photo || null,
         });
       }
-      setLoading(false);
     } else {
-<<<<<<< HEAD
-      // Reset explícito quando em modo de criação para evitar dados persistentes
+      // Reset explícito ao entrar em modo criação para evitar "sujeira" de último cadastro
       reset({
         name: '',
         speciesName: '',
@@ -159,14 +153,11 @@ export default function PlantForm() {
         notes: '',
         photo: null,
       });
-=======
->>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
-      setLoading(false);
     }
+    setLoading(false);
   }, [isEditing, plant, reset]);
 
-<<<<<<< HEAD
-  // Garante limpeza quando a tela volta a focar em modo criação (espelha SpeciesForm)
+  // Limpa o formulário sempre que a tela ganha foco em modo criação (evita dados persistidos ao voltar)
   useFocusEffect(
     useMemo(
       () => () => {
@@ -185,8 +176,6 @@ export default function PlantForm() {
     )
   );
 
-=======
->>>>>>> 9268c4ed29c0f90786536a00e1e265facc0f4d4b
   const onSubmit = async (data: PlantFormData) => {
     try {
       setSubmitting(true);
