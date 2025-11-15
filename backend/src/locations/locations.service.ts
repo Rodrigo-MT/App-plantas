@@ -31,8 +31,8 @@ export class LocationsService {
         throw new BadRequestException('O nome da localização contém caracteres inválidos.');
       }
 
-      // Verifica duplicata por nome (case-insensitive / similar)
-      const existing = await this.findByName(name);
+      // Verifica duplicata por nome (case-insensitive, apenas correspondência exata)
+      const existing = await this.findByNameExact(name);
       if (existing) {
         throw new BadRequestException(`Já existe uma localização com o nome '${name}'.`);
       }
@@ -130,8 +130,8 @@ export class LocationsService {
         if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/.test(updateLocationDto.name)) {
           throw new BadRequestException('O nome da localização não pode conter números ou caracteres especiais.');
         }
-        // verifica duplicata (exceto a atual)
-        const existing = await this.findByName(updateLocationDto.name);
+        // verifica duplicata exata (exceto a atual)
+        const existing = await this.findByNameExact(updateLocationDto.name);
         if (existing && existing.id !== id) {
           throw new BadRequestException(`Já existe uma localização com o nome '${updateLocationDto.name}'.`);
         }
@@ -279,5 +279,14 @@ export class LocationsService {
 
     const target = normalize(trimmed);
     return all.find((l) => normalize(l.name) === target) || null;
+  }
+
+  /**
+   * Busca localização por nome (apenas correspondência exata case-insensitive)
+   * usada para validação de duplicidade em criação/atualização
+   */
+  async findByNameExact(name: string): Promise<Location | null> {
+    if (!name) return null;
+    return await this.locationsRepository.findOne({ where: { name: ILike(name.trim()) } });
   }
 }

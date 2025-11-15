@@ -25,7 +25,7 @@ export class CareLogsController {
   @Post()
   @ApiOperation({ 
     summary: 'Criar novo log de cuidado',
-    description: 'Registra um novo cuidado realizado em uma planta' 
+    description: 'Registra um novo cuidado. Exemplo válido: { plantName: "Rosa do Deserto", type: "watering", date: "2025-11-15", success: true, notes: "Regada com 500ml" }' 
   })
   @ApiResponse({ 
     status: HttpStatus.CREATED, 
@@ -43,7 +43,7 @@ export class CareLogsController {
   @Get()
   @ApiOperation({ 
     summary: 'Listar todos os logs',
-    description: 'Retorna todos os logs de cuidado cadastrados' 
+    description: 'Retorna todos os logs de cuidado cadastrados'
   })
   @ApiQuery({ 
     name: 'plantName', 
@@ -61,7 +61,13 @@ export class CareLogsController {
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de logs retornada com sucesso', 
-    type: [CareLog] 
+    type: [CareLog],
+    schema: {
+      example: [
+        { id: 'log1', plantId: 'uuidp1', type: 'watering', date: '2025-11-15', success: true, notes: 'Regada com 500ml' },
+        { id: 'log2', plantId: 'uuidp2', type: 'pruning', date: '2025-11-14', success: true, notes: 'Podou 2 folhas danificadas' }
+      ]
+    }
   })
   findAll(
     @Query('plantName') plantName?: string,
@@ -127,7 +133,7 @@ export class CareLogsController {
   })
   @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
   @ApiParam({ name: 'type', description: 'Tipo do cuidado', example: 'watering' })
-  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2024-01-15' })
+  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2025-11-15' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Log encontrado', 
@@ -148,11 +154,11 @@ export class CareLogsController {
   @Patch(':plantName/:type/:date')
   @ApiOperation({ 
     summary: 'Atualizar log por identificador composto',
-    description: 'Atualiza parcialmente os dados de um log usando identificador composto (plantName, type, date)' 
+    description: 'Atualiza parcialmente os dados de um log usando identificador composto (plantName, type, date). Observação: plantName, type e date são imutáveis no PATCH.' 
   })
   @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
   @ApiParam({ name: 'type', description: 'Tipo do cuidado', example: 'watering' })
-  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2024-01-15' })
+  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2025-11-15' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Log atualizado com sucesso', 
@@ -184,7 +190,7 @@ export class CareLogsController {
   })
   @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
   @ApiParam({ name: 'type', description: 'Tipo do cuidado', example: 'watering' })
-  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2024-01-15' })
+  @ApiParam({ name: 'date', description: 'Data do cuidado (YYYY-MM-DD)', example: '2025-11-15' })
   @ApiResponse({ 
     status: HttpStatus.NO_CONTENT, 
     description: 'Log removido com sucesso' 

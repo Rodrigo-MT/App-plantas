@@ -203,29 +203,21 @@ export class CareLogsService {
     const careLog = await this.findOne(id); // Valida se o log existe
     
     try {
+      // Bloqueia alterações nos campos do identificador composto
+      const forbiddenKeys = ['plantName', 'type', 'date'];
+      for (const key of forbiddenKeys) {
+        if (Object.prototype.hasOwnProperty.call(updateCareLogDto as any, key)) {
+          throw new BadRequestException('Não é permitido alterar plantName, type ou date em PATCH. Crie um novo log se precisar modificar esses campos.');
+        }
+      }
+
       const updateData: any = { ...updateCareLogDto };
 
       // Se fornecer plantName, resolve para plantId
-      if (updateCareLogDto.plantName) {
-        if (!updateCareLogDto.plantName?.trim()) {
-          throw new BadRequestException('O nome da planta não pode ser vazio.');
-        }
-        const plant = await this.plantsService.findByName(updateCareLogDto.plantName);
-        if (!plant) throw new BadRequestException(`Planta '${updateCareLogDto.plantName}' não encontrada`);
-        updateData.plantId = plant.id;
-      }
+      // (Imutável) plantName não pode ser atualizado
 
       // Converte date de string para Date se fornecido e valida
-      if (updateCareLogDto.date !== undefined) {
-        if (!updateCareLogDto.date) throw new BadRequestException('A data do log não pode ser vazia.');
-  const dt = parseYMDToLocalDate(updateCareLogDto.date);
-  if (!dt) throw new BadRequestException('Data inválida para o log de cuidado.');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  dt.setHours(0, 0, 0, 0);
-  if (dt.getTime() > today.getTime()) throw new BadRequestException('A data do log de cuidado não pode ser futura.');
-  updateData.date = dt;
-      }
+      // (Imutável) date não pode ser atualizado
 
       if (updateCareLogDto.notes !== undefined) {
         if (!updateCareLogDto.notes?.trim()) {
@@ -241,16 +233,7 @@ export class CareLogsService {
       }
 
       // Se alterar plantId/type/date, verificar unicidade
-      const candidatePlantId = updateData.plantId ?? careLog.plantId;
-      const candidateType = updateData.type ?? careLog.type;
-      const candidateDate = updateData.date ?? careLog.date;
-
-      const conflict = await this.careLogsRepository.findOne({
-        where: { plantId: candidatePlantId, type: candidateType, date: candidateDate },
-      });
-      if (conflict && conflict.id !== careLog.id) {
-        throw new BadRequestException(`Outro log já existe para planta '${updateCareLogDto.plantName ?? ''}', tipo '${candidateType}' e data '${candidateDate.toISOString().slice(0,10)}'`);
-      }
+      // (Sem verificação de unicidade aqui porque identificador composto é imutável no PATCH)
 
       const updated = this.careLogsRepository.merge(careLog, updateData);
       return await this.careLogsRepository.save(updated);

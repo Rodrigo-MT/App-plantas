@@ -1,60 +1,23 @@
 {
   "info": {
     "name": "PlantCare API - CRUD Completo",
-    "description": "Collection completa para testar todos os CRUDs do sistema PlantCare",
+    "description": "Collection completa para testar todos os CRUDs e consultas especiais da API PlantCare.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000",
-      "type": "string"
-    },
-    {
-      "key": "speciesName",
-      "value": "Aloe vera",
-      "type": "string"
-    },
-    {
-      "key": "locationName",
-      "value": "Sala de Estar",
-      "type": "string"
-    },
-    {
-      "key": "plantName",
-      "value": "Minha Babosa",
-      "type": "string"
-    },
-    {
-      "key": "careReminderPlantName",
-      "value": "Minha Babosa",
-      "type": "string"
-    },
-    {
-      "key": "careReminderType",
-      "value": "watering",
-      "type": "string"
-    },
-    {
-      "key": "careReminderNextDue",
-      "value": "2024-01-27",
-      "type": "string"
-    },
-    {
-      "key": "careLogPlantName",
-      "value": "Minha Babosa",
-      "type": "string"
-    },
-    {
-      "key": "careLogType",
-      "value": "watering",
-      "type": "string"
-    },
-    {
-      "key": "careLogDate",
-      "value": "2024-01-25",
-      "type": "string"
-    }
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "speciesName", "value": "Aloe vera", "type": "string" },
+    { "key": "locationName", "value": "Sala de Estar", "type": "string" },
+    { "key": "plantName", "value": "Minha Babosa", "type": "string" },
+    { "key": "careReminderPlantName", "value": "Minha Babosa", "type": "string" },
+    { "key": "careReminderType", "value": "watering", "type": "string" },
+    { "key": "careReminderNextDue", "value": "2025-12-01", "type": "string" },
+    { "key": "careLogPlantName", "value": "Minha Babosa", "type": "string" },
+    { "key": "careLogType", "value": "watering", "type": "string" },
+    { "key": "careLogDate", "value": "2025-11-15", "type": "string" },
+    { "key": "flowSpeciesName", "value": "Aloe vera Flow", "type": "string" },
+    { "key": "flowLocationName", "value": "Cozinha de Teste", "type": "string" },
+    { "key": "flowPlantName", "value": "Planta Teste Flow", "type": "string" }
   ],
   "item": [
     {
@@ -65,123 +28,53 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/species",
-              "host": ["{{baseUrl}}"],
-              "path": ["species"]
-            },
+            "url": { "raw": "{{baseUrl}}/species", "host": ["{{baseUrl}}"], "path": ["species"] },
             "description": "Retorna todas as espécies cadastradas"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lista de espécies",
-              "status": "OK",
-              "code": 200,
-              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"name\": \"Aloe vera\",\n    \"commonName\": \"Babosa\",\n    \"description\": \"Planta suculenta medicinal com propriedades curativas\",\n    \"careInstructions\": \"Luz solar direta, pouca rega\",\n    \"idealConditions\": \"Sol pleno, solo bem drenado\",\n    \"photo\": \"https://example.com/aloe-vera.jpg\",\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n    \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n  }\n]"
-            }
-          ]
+          }
         },
         {
           "name": "POST - Criar nova espécie",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Aloe vera\",\n  \"commonName\": \"Babosa\",\n  \"description\": \"Planta suculenta medicinal com propriedades curativas\",\n  \"careInstructions\": \"Luz solar direta, pouca rega\",\n  \"idealConditions\": \"Sol pleno, solo bem drenado\",\n  \"photo\": \"https://example.com/aloe-vera.jpg\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/species",
-              "host": ["{{baseUrl}}"],
-              "path": ["species"]
-            },
+            "url": { "raw": "{{baseUrl}}/species", "host": ["{{baseUrl}}"], "path": ["species"] },
             "description": "Cria uma nova espécie no sistema"
-          },
-            "response": [
-              {
-                "name": "Exemplo - Espécie criada",
-                "status": "Created",
-                "code": 201,
-                "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"name\": \"Aloe vera\",\n  \"commonName\": \"Babosa\",\n  \"description\": \"Planta suculenta medicinal com propriedades curativas\",\n  \"careInstructions\": \"Luz solar direta, pouca rega\",\n  \"idealConditions\": \"Sol pleno, solo bem drenado\",\n  \"photo\": \"https://example.com/aloe-vera.jpg\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n}"
-              }
-            ]
+          }
         },
         {
           "name": "GET - Buscar espécie por nome",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/species/{{speciesName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["species", "{{speciesName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/species/{{speciesName}}", "host": ["{{baseUrl}}"], "path": ["species", "{{speciesName}}"] },
             "description": "Busca uma espécie específica pelo nome"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Espécie",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"name\": \"Aloe vera\",\n  \"commonName\": \"Babosa\",\n  \"description\": \"Planta suculenta medicinal com propriedades curativas\",\n  \"careInstructions\": \"Luz solar direta, pouca rega\",\n  \"idealConditions\": \"Sol pleno, solo bem drenado\",\n  \"photo\": \"https://example.com/aloe-vera.jpg\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "PATCH - Atualizar espécie",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"commonName\": \"Babosa Medicinal\",\n  \"description\": \"Planta suculenta com excelentes propriedades medicinais para a pele\",\n  \"careInstructions\": \"Luz solar direta, rega a cada 15 dias\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/species/{{speciesName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["species", "{{speciesName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/species/{{speciesName}}", "host": ["{{baseUrl}}"], "path": ["species", "{{speciesName}}"] },
             "description": "Atualiza parcialmente uma espécie existente"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Espécie atualizada",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"name\": \"Aloe vera\",\n  \"commonName\": \"Babosa Medicinal\",\n  \"description\": \"Planta suculenta com excelentes propriedades medicinais para a pele\",\n  \"careInstructions\": \"Luz solar direta, rega a cada 15 dias\",\n  \"idealConditions\": \"Sol pleno, solo bem drenado\",\n  \"photo\": \"https://example.com/aloe-vera.jpg\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "DELETE - Remover espécie",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/species/{{speciesName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["species", "{{speciesName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/species/{{speciesName}}", "host": ["{{baseUrl}}"], "path": ["species", "{{speciesName}}"] },
             "description": "Remove uma espécie do sistema (apenas se não tiver plantas associadas)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Remoção com sucesso",
-              "status": "No Content",
-              "code": 204,
-              "body": ""
-            }
-          ]
+          }
         }
       ]
     },
@@ -193,137 +86,62 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/locations",
-              "host": ["{{baseUrl}}"],
-              "path": ["locations"]
-            },
+            "url": { "raw": "{{baseUrl}}/locations", "host": ["{{baseUrl}}"], "path": ["locations"] },
             "description": "Retorna todas as localizações cadastradas"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lista de localizações",
-              "status": "OK",
-              "code": 200,
-              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"name\": \"Sala de Estar\",\n    \"type\": \"indoor\",\n    \"sunlight\": \"partial\",\n    \"humidity\": \"medium\",\n    \"description\": \"Ambiente interno com luz indireta\",\n    \"photo\": \"https://example.com/sala-estar.jpg\"\n  }\n]"
-            }
-          ]
+          }
         },
         {
           "name": "POST - Criar nova localização",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Cozinha\",\n  \"type\": \"indoor\",\n  \"sunlight\": \"partial\",\n  \"humidity\": \"high\",\n  \"description\": \"Ambiente da cozinha com luz indireta e umidade variável\",\n  \"photo\": \"https://example.com/cozinha.jpg\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/locations",
-              "host": ["{{baseUrl}}"],
-              "path": ["locations"]
-            },
+            "url": { "raw": "{{baseUrl}}/locations", "host": ["{{baseUrl}}"], "path": ["locations"] },
             "description": "Cria uma nova localização no sistema"
-          },
-            "response": [
-              {
-                "name": "Exemplo - Localização criada",
-                "status": "Created",
-                "code": 201,
-                "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"name\": \"Cozinha\",\n  \"type\": \"indoor\",\n  \"sunlight\": \"partial\",\n  \"humidity\": \"high\",\n  \"description\": \"Ambiente da cozinha com luz indireta e umidade variável\",\n  \"photo\": \"https://example.com/cozinha.jpg\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n}"
-              }
-            ]
+          }
         },
         {
           "name": "GET - Buscar localização por nome",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/locations/{{locationName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["locations", "{{locationName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/locations/{{locationName}}", "host": ["{{baseUrl}}"], "path": ["locations", "{{locationName}}"] },
             "description": "Busca uma localização específica pelo nome"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Localização",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"name\": \"Sala de Estar\",\n  \"type\": \"indoor\",\n  \"sunlight\": \"partial\",\n  \"humidity\": \"medium\",\n  \"description\": \"Ambiente interno com luz indireta\",\n  \"photo\": \"https://example.com/sala-estar.jpg\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
-          "name": "GET - Buscar por tipo (indoor/outdoor)",
+          "name": "GET - Buscar por tipo (query)",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/locations/type/indoor",
-              "host": ["{{baseUrl}}"],
-              "path": ["locations", "type", "indoor"]
-            },
-            "description": "Busca localizações por tipo de ambiente"
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/locations?type=indoor", "host": ["{{baseUrl}}"], "path": ["locations"], "query": [ { "key": "type", "value": "indoor" } ] },
+            "description": "Busca localizações por tipo de ambiente via query (?type=indoor)"
+          }
         },
         {
           "name": "PATCH - Atualizar localização",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Cozinha Principal\",\n  \"humidity\": \"medium\",\n  \"description\": \"Ambiente da cozinha com boa ventilação\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/locations/{{locationName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["locations", "{{locationName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/locations/{{locationName}}", "host": ["{{baseUrl}}"], "path": ["locations", "{{locationName}}"] },
             "description": "Atualiza parcialmente uma localização existente"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Localização atualizada",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"name\": \"Cozinha Principal\",\n  \"type\": \"indoor\",\n  \"sunlight\": \"partial\",\n  \"humidity\": \"medium\",\n  \"description\": \"Ambiente da cozinha com boa ventilação\",\n  \"photo\": \"https://example.com/cozinha.jpg\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "DELETE - Remover localização",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/locations/{{locationName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["locations", "{{locationName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/locations/{{locationName}}", "host": ["{{baseUrl}}"], "path": ["locations", "{{locationName}}"] },
             "description": "Remove uma localização do sistema (apenas se não tiver plantas associadas)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Remoção de localização",
-              "status": "No Content",
-              "code": 204,
-              "body": ""
-            }
-          ]
+          }
         }
       ]
     },
@@ -335,123 +153,53 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/plants",
-              "host": ["{{baseUrl}}"],
-              "path": ["plants"]
-            },
+            "url": { "raw": "{{baseUrl}}/plants", "host": ["{{baseUrl}}"], "path": ["plants"] },
             "description": "Retorna todas as plantas cadastradas"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lista de plantas",
-              "status": "OK",
-              "code": 200,
-              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174010\",\n    \"name\": \"Minha Babosa\",\n    \"speciesId\": \"123e4567-e89b-12d3-a456-426614174020\",\n    \"locationId\": \"123e4567-e89b-12d3-a456-426614174030\",\n    \"purchaseDate\": \"2024-01-20\",\n    \"notes\": \"Planta comprada no mercado local, está se adaptando bem\",\n    \"photo\": \"https://example.com/minha-babosa.jpg\"\n  }\n]"
-            }
-          ]
+          }
         },
         {
           "name": "POST - Criar nova planta (por nomes)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Minha Babosa\",\n  \"speciesName\": \"{{speciesName}}\",\n  \"locationName\": \"{{locationName}}\",\n  \"purchaseDate\": \"2024-01-20\",\n  \"notes\": \"Planta comprada no mercado local, está se adaptando bem\",\n  \"photo\": \"https://example.com/minha-babosa.jpg\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/plants",
-              "host": ["{{baseUrl}}"],
-              "path": ["plants"]
-            },
+            "url": { "raw": "{{baseUrl}}/plants", "host": ["{{baseUrl}}"], "path": ["plants"] },
             "description": "Cria uma nova planta no sistema usando nomes (speciesName, locationName)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Planta criada",
-              "status": "Created",
-              "code": 201,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"name\": \"Minha Babosa\",\n  \"speciesId\": \"123e4567-e89b-12d3-a456-426614174020\",\n  \"locationId\": \"123e4567-e89b-12d3-a456-426614174030\",\n  \"purchaseDate\": \"2024-01-20\",\n  \"notes\": \"Planta comprada no mercado local, está se adaptando bem\",\n  \"photo\": \"https://example.com/minha-babosa.jpg\",\n  \"createdAt\": \"2024-01-20T12:00:00.000Z\",\n  \"updatedAt\": \"2024-01-20T12:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "GET - Buscar planta por nome",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/plants/{{plantName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plants", "{{plantName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/plants/{{plantName}}", "host": ["{{baseUrl}}"], "path": ["plants", "{{plantName}}"] },
             "description": "Busca uma planta específica pelo nome"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Planta",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"name\": \"Minha Babosa\",\n  \"speciesId\": \"123e4567-e89b-12d3-a456-426614174020\",\n  \"locationId\": \"123e4567-e89b-12d3-a456-426614174030\",\n  \"purchaseDate\": \"2024-01-20\",\n  \"notes\": \"Planta comprada no mercado local, está se adaptando bem\",\n  \"photo\": \"https://example.com/minha-babosa.jpg\",\n  \"createdAt\": \"2024-01-20T12:00:00.000Z\",\n  \"updatedAt\": \"2024-01-20T12:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "PATCH - Atualizar planta",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Babosa Medicinal\",\n  \"notes\": \"Crescendo bem, já produzindo novos brotos\",\n  \"photo\": \"https://example.com/babosa-crescendo.jpg\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/plants/{{plantName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plants", "{{plantName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/plants/{{plantName}}", "host": ["{{baseUrl}}"], "path": ["plants", "{{plantName}}"] },
             "description": "Atualiza parcialmente uma planta existente"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Planta atualizada",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"name\": \"Babosa Medicinal\",\n  \"speciesId\": \"123e4567-e89b-12d3-a456-426614174020\",\n  \"locationId\": \"123e4567-e89b-12d3-a456-426614174030\",\n  \"purchaseDate\": \"2024-01-20\",\n  \"notes\": \"Crescendo bem, já produzindo novos brotos\",\n  \"photo\": \"https://example.com/babosa-crescendo.jpg\",\n  \"createdAt\": \"2024-01-20T12:00:00.000Z\",\n  \"updatedAt\": \"2024-02-01T12:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "DELETE - Remover planta",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/plants/{{plantName}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plants", "{{plantName}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/plants/{{plantName}}", "host": ["{{baseUrl}}"], "path": ["plants", "{{plantName}}"] },
             "description": "Remove uma planta do sistema"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Planta removida",
-              "status": "No Content",
-              "code": 204,
-              "body": ""
-            }
-          ]
+          }
         }
       ]
     },
@@ -463,123 +211,80 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/care-reminders",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-reminders"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-reminders", "host": ["{{baseUrl}}"], "path": ["care-reminders"] },
             "description": "Retorna todos os lembretes de cuidado cadastrados"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lista de lembretes",
-              "status": "OK",
-              "code": 200,
-              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174100\",\n    \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n    \"type\": \"watering\",\n    \"frequency\": 7,\n    \"lastDone\": \"2024-01-20\",\n    \"nextDue\": \"2024-01-27\",\n    \"notes\": \"Regar com água filtrada em temperatura ambiente\",\n    \"isActive\": true\n  }\n]"
-            }
-          ]
+          }
         },
         {
           "name": "POST - Criar novo lembrete (por nome)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"plantName\": \"{{plantName}}\",\n  \"type\": \"{{careReminderType}}\",\n  \"frequency\": 7,\n  \"lastDone\": \"2024-01-20\",\n  \"nextDue\": \"{{careReminderNextDue}}\",\n  \"notes\": \"Regar com água filtrada em temperatura ambiente\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"plantName\": \"{{plantName}}\",\n  \"type\": \"{{careReminderType}}\",\n  \"frequency\": 7,\n  \"lastDone\": \"2025-11-15\",\n  \"nextDue\": \"{{careReminderNextDue}}\",\n  \"notes\": \"Regar com água filtrada em temperatura ambiente\",\n  \"isActive\": true\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/care-reminders",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-reminders"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-reminders", "host": ["{{baseUrl}}"], "path": ["care-reminders"] },
             "description": "Cria um novo lembrete de cuidado usando plantName (nome da planta)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lembrete criado",
-              "status": "Created",
-              "code": 201,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174100\",\n  \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"type\": \"watering\",\n  \"frequency\": 7,\n  \"lastDone\": \"2024-01-20\",\n  \"nextDue\": \"2024-01-27\",\n  \"notes\": \"Regar com água filtrada em temperatura ambiente\",\n  \"isActive\": true,\n  \"createdAt\": \"2024-01-20T12:00:00.000Z\",\n  \"updatedAt\": \"2024-01-20T12:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "GET - Buscar lembrete por identificador composto",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/care-reminders/{{careReminderPlantName}}/{{careReminderType}}/{{careReminderNextDue}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-reminders", "{{careReminderPlantName}}", "{{careReminderType}}", "{{careReminderNextDue}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-reminders/{{careReminderPlantName}}/{{careReminderType}}/{{careReminderNextDue}}", "host": ["{{baseUrl}}"], "path": ["care-reminders", "{{careReminderPlantName}}", "{{careReminderType}}", "{{careReminderNextDue}}"] },
             "description": "Busca um lembrete usando o identificador composto (plantName/type/nextDue)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lembrete encontrado",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174100\",\n  \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"type\": \"watering\",\n  \"frequency\": 7,\n  \"lastDone\": \"2024-01-20\",\n  \"nextDue\": \"2024-01-27\",\n  \"notes\": \"Regar com água filtrada em temperatura ambiente\",\n  \"isActive\": true\n}"
-            }
-          ]
+          }
         },
         {
-          "name": "PATCH - Atualizar lembrete",
+          "name": "PATCH - Atualizar lembrete (sem alterar identificador)",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"frequency\": 10,\n  \"nextDue\": \"2024-01-30\",\n  \"notes\": \"Aumentar intervalo de rega no inverno\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"frequency\": 10,\n  \"notes\": \"Aumentar intervalo de rega no inverno\",\n  \"isActive\": true\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/care-reminders/{{careReminderPlantName}}/{{careReminderType}}/{{careReminderNextDue}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-reminders", "{{careReminderPlantName}}", "{{careReminderType}}", "{{careReminderNextDue}}"]
-            },
-            "description": "Atualiza parcialmente um lembrete existente (identificador composto)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lembrete atualizado",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174100\",\n  \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"type\": \"watering\",\n  \"frequency\": 10,\n  \"lastDone\": \"2024-01-20\",\n  \"nextDue\": \"2024-01-30\",\n  \"notes\": \"Aumentar intervalo de rega no inverno\",\n  \"isActive\": true\n}"
-            }
-          ]
+            "url": { "raw": "{{baseUrl}}/care-reminders/{{careReminderPlantName}}/{{careReminderType}}/{{careReminderNextDue}}", "host": ["{{baseUrl}}"], "path": ["care-reminders", "{{careReminderPlantName}}", "{{careReminderType}}", "{{careReminderNextDue}}"] },
+            "description": "Atualiza parcialmente um lembrete existente (identificador composto). Observação: plantName, type e nextDue são imutáveis no PATCH."
+          }
         },
         {
           "name": "DELETE - Remover lembrete",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/care-reminders/{{careReminderPlantName}}/{{careReminderType}}/{{careReminderNextDue}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-reminders", "{{careReminderPlantName}}", "{{careReminderType}}", "{{careReminderNextDue}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-reminders/{{careReminderPlantName}}/{{careReminderType}}/{{careReminderNextDue}}", "host": ["{{baseUrl}}"], "path": ["care-reminders", "{{careReminderPlantName}}", "{{careReminderType}}", "{{careReminderNextDue}}"] },
             "description": "Remove um lembrete do sistema (identificador composto)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lembrete removido",
-              "status": "No Content",
-              "code": 204,
-              "body": ""
-            }
-          ]
+          }
+        },
+        {
+          "name": "GET - Lembretes Overdue (lastDone <= hoje)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/care-reminders/overdue", "host": ["{{baseUrl}}"], "path": ["care-reminders", "overdue"] },
+            "description": "Retorna lembretes ativos cuja lastDone é passada ou hoje"
+          }
+        },
+        {
+          "name": "GET - Lembretes Próximos (nextDue > hoje)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/care-reminders/upcoming", "host": ["{{baseUrl}}"], "path": ["care-reminders", "upcoming"] },
+            "description": "Retorna lembretes ativos com nextDue futura"
+          }
+        },
+        {
+          "name": "GET - Lembretes Ativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/care-reminders/active", "host": ["{{baseUrl}}"], "path": ["care-reminders", "active"] },
+            "description": "Retorna apenas lembretes ativos"
+          }
         }
       ]
     },
@@ -591,123 +296,71 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/care-logs",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-logs"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-logs", "host": ["{{baseUrl}}"], "path": ["care-logs"] },
             "description": "Retorna todos os registros de cuidado cadastrados"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lista de registros",
-              "status": "OK",
-              "code": 200,
-              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174200\",\n    \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n    \"type\": \"watering\",\n    \"date\": \"2024-01-25\",\n    \"notes\": \"Regada com 500ml de água filtrada. Solo estava seco.\",\n    \"photo\": \"https://example.com/regababosa.jpg\",\n    \"success\": true\n  }\n]"
-            }
-          ]
+          }
         },
         {
           "name": "POST - Criar novo registro (por nome)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"plantName\": \"{{plantName}}\",\n  \"type\": \"{{careLogType}}\",\n  \"date\": \"{{careLogDate}}\",\n  \"notes\": \"Regada com 500ml de água filtrada. Solo estava seco.\",\n  \"photo\": \"https://example.com/regababosa.jpg\",\n  \"success\": true\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/care-logs",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-logs"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-logs", "host": ["{{baseUrl}}"], "path": ["care-logs"] },
             "description": "Cria um novo registro de cuidado usando plantName (nome da planta)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Registro criado",
-              "status": "Created",
-              "code": 201,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174200\",\n  \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"type\": \"watering\",\n  \"date\": \"2024-01-25\",\n  \"notes\": \"Regada com 500ml de água filtrada. Solo estava seco.\",\n  \"photo\": \"https://example.com/regababosa.jpg\",\n  \"success\": true,\n  \"createdAt\": \"2024-01-25T10:00:00.000Z\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "GET - Buscar registro por identificador composto",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/care-logs/{{careLogPlantName}}/{{careLogType}}/{{careLogDate}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-logs", "{{careLogPlantName}}", "{{careLogType}}", "{{careLogDate}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-logs/{{careLogPlantName}}/{{careLogType}}/{{careLogDate}}", "host": ["{{baseUrl}}"], "path": ["care-logs", "{{careLogPlantName}}", "{{careLogType}}", "{{careLogDate}}"] },
             "description": "Busca um registro usando o identificador composto (plantName/type/date)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Registro encontrado",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174200\",\n  \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"type\": \"watering\",\n  \"date\": \"2024-01-25\",\n  \"notes\": \"Regada com 500ml de água filtrada. Solo estava seco.\",\n  \"photo\": \"https://example.com/regababosa.jpg\",\n  \"success\": true\n}"
-            }
-          ]
+          }
         },
         {
           "name": "PATCH - Atualizar registro",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"notes\": \"Regada com 600ml - planta estava com sede\",\n  \"success\": true\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/care-logs/{{careLogPlantName}}/{{careLogType}}/{{careLogDate}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-logs", "{{careLogPlantName}}", "{{careLogType}}", "{{careLogDate}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-logs/{{careLogPlantName}}/{{careLogType}}/{{careLogDate}}", "host": ["{{baseUrl}}"], "path": ["care-logs", "{{careLogPlantName}}", "{{careLogType}}", "{{careLogDate}}"] },
             "description": "Atualiza parcialmente um registro existente (identificador composto)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Registro atualizado",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174200\",\n  \"plantId\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"type\": \"watering\",\n  \"date\": \"2024-01-25\",\n  \"notes\": \"Regada com 600ml - planta estava com sede\",\n  \"photo\": \"https://example.com/regababosa.jpg\",\n  \"success\": true\n}"
-            }
-          ]
+          }
         },
         {
           "name": "DELETE - Remover registro",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/care-logs/{{careLogPlantName}}/{{careLogType}}/{{careLogDate}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["care-logs", "{{careLogPlantName}}", "{{careLogType}}", "{{careLogDate}}"]
-            },
+            "url": { "raw": "{{baseUrl}}/care-logs/{{careLogPlantName}}/{{careLogType}}/{{careLogDate}}", "host": ["{{baseUrl}}"], "path": ["care-logs", "{{careLogPlantName}}", "{{careLogType}}", "{{careLogDate}}"] },
             "description": "Remove um registro do sistema (identificador composto)"
-          },
-          "response": [
-            {
-              "name": "Exemplo - Registro removido",
-              "status": "No Content",
-              "code": 204,
-              "body": ""
-            }
-          ]
+          }
+        },
+        {
+          "name": "GET - Logs recentes (últimos 30 dias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/care-logs/recent", "host": ["{{baseUrl}}"], "path": ["care-logs", "recent"] },
+            "description": "Retorna registros dos últimos 30 dias"
+          }
+        },
+        {
+          "name": "GET - Logs bem-sucedidos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/care-logs/successful", "host": ["{{baseUrl}}"], "path": ["care-logs", "successful"] },
+            "description": "Retorna apenas registros com success=true"
+          }
         }
       ]
     },
@@ -715,74 +368,112 @@
       "name": "🔄 Fluxo Completo de Teste",
       "item": [
         {
-          "name": "1. Listar espécies existentes",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/species",
-              "host": ["{{baseUrl}}"],
-              "path": ["species"]
-            }
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lista de espécies (fluxo)",
-              "status": "OK",
-              "code": 200,
-              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"name\": \"Aloe vera\",\n    \"commonName\": \"Babosa\"\n  }\n]"
-            }
-          ]
-        },
-        {
-          "name": "2. Listar localizações existentes",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/locations",
-              "host": ["{{baseUrl}}"],
-              "path": ["locations"]
-            }
-          },
-          "response": [
-            {
-              "name": "Exemplo - Lista de localizações (fluxo)",
-              "status": "OK",
-              "code": 200,
-              "body": "[\n  {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"name\": \"Sala de Estar\"\n  }\n]"
-            }
-          ]
-        },
-        {
-          "name": "3. Criar planta usando nomes (fluxo de teste)",
+          "name": "1. Species - Criar espécie (Flow)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Minha Planta Teste\",\n  \"speciesName\": \"{{speciesName}}\",\n  \"locationName\": \"{{locationName}}\",\n  \"purchaseDate\": \"2024-01-20\",\n  \"notes\": \"Planta criada para teste da API\",\n  \"photo\": \"https://example.com/planta-teste.jpg\"\n}"
+              "raw": "{\n  \"name\": \"{{flowSpeciesName}}\",\n  \"commonName\": \"Babosa Flow\",\n  \"description\": \"Espécie de teste do fluxo\",\n  \"careInstructions\": \"Luz indireta, rega moderada\",\n  \"idealConditions\": \"Solo bem drenado\",\n  \"photo\": \"https://example.com/aloe-flow.jpg\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/plants",
-              "host": ["{{baseUrl}}"],
-              "path": ["plants"]
-            }
-          },
-          "response": [
-            {
-              "name": "Exemplo - Planta criada no fluxo",
-              "status": "Created",
-              "code": 201,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174010\",\n  \"name\": \"Minha Planta Teste\",\n  \"speciesId\": \"123e4567-e89b-12d3-a456-426614174020\",\n  \"locationId\": \"123e4567-e89b-12d3-a456-426614174030\",\n  \"purchaseDate\": \"2024-01-20\",\n  \"notes\": \"Planta criada para teste da API\",\n  \"photo\": \"https://example.com/planta-teste.jpg\",\n  \"createdAt\": \"2024-01-20T12:00:00.000Z\"\n}"
-            }
-          ]
-        }
+            "url": { "raw": "{{baseUrl}}/species", "host": ["{{baseUrl}}"], "path": ["species"] }
+          }
+        },
+        { "name": "2. Species - Listar todas", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/species", "host": ["{{baseUrl}}"], "path": ["species"] } } },
+        { "name": "3. Species - Buscar por nome (Flow)", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/species/{{flowSpeciesName}}", "host": ["{{baseUrl}}"], "path": ["species","{{flowSpeciesName}}"] } } },
+        {
+          "name": "4. Locations - Criar localização (Flow)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{flowLocationName}}\",\n  \"type\": \"indoor\",\n  \"sunlight\": \"partial\",\n  \"humidity\": \"medium\",\n  \"description\": \"Local de teste do fluxo\",\n  \"photo\": \"https://example.com/local-flow.jpg\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/locations", "host": ["{{baseUrl}}"], "path": ["locations"] }
+          }
+        },
+        { "name": "5. Locations - Listar todas", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/locations", "host": ["{{baseUrl}}"], "path": ["locations"] } } },
+        { "name": "6. Locations - Buscar por nome (Flow)", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/locations/{{flowLocationName}}", "host": ["{{baseUrl}}"], "path": ["locations","{{flowLocationName}}"] } } },
+        { "name": "7. Locations - Buscar por tipo (indoor)", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/locations?type=indoor", "host": ["{{baseUrl}}"], "path": ["locations"], "query": [ { "key": "type", "value": "indoor" } ] } } },
+        {
+          "name": "8. Plants - Criar planta (Flow)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{flowPlantName}}\",\n  \"speciesName\": \"{{flowSpeciesName}}\",\n  \"locationName\": \"{{flowLocationName}}\",\n  \"purchaseDate\": \"2025-11-01\",\n  \"notes\": \"Planta do fluxo de teste\",\n  \"photo\": \"https://example.com/planta-flow.jpg\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/plants", "host": ["{{baseUrl}}"], "path": ["plants"] }
+          }
+        },
+        { "name": "9. Plants - Listar todas", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/plants", "host": ["{{baseUrl}}"], "path": ["plants"] } } },
+        { "name": "10. Plants - Buscar por nome (Flow)", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/plants/{{flowPlantName}}", "host": ["{{baseUrl}}"], "path": ["plants","{{flowPlantName}}"] } } },
+        {
+          "name": "11. Plants - Atualizar (PATCH notas)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"notes\": \"Notas atualizadas no fluxo\"\n}" },
+            "url": { "raw": "{{baseUrl}}/plants/{{flowPlantName}}", "host": ["{{baseUrl}}"], "path": ["plants","{{flowPlantName}}"] }
+          }
+        },
+        {
+          "name": "12. Care Reminders - Criar (Flow)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plantName\": \"{{flowPlantName}}\",\n  \"type\": \"{{careReminderType}}\",\n  \"frequency\": 7,\n  \"lastDone\": \"2025-11-15\",\n  \"nextDue\": \"{{careReminderNextDue}}\",\n  \"notes\": \"Lembrete do fluxo\",\n  \"isActive\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/care-reminders", "host": ["{{baseUrl}}"], "path": ["care-reminders"] }
+          }
+        },
+        { "name": "13. Care Reminders - Listar todos", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-reminders", "host": ["{{baseUrl}}"], "path": ["care-reminders"] } } },
+        { "name": "14. Care Reminders - Buscar por identificador composto", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-reminders/{{flowPlantName}}/{{careReminderType}}/{{careReminderNextDue}}", "host": ["{{baseUrl}}"], "path": ["care-reminders","{{flowPlantName}}","{{careReminderType}}","{{careReminderNextDue}}"] } } },
+        {
+          "name": "15. Care Reminders - Atualizar (PATCH, sem alterar identificador)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"frequency\": 10,\n  \"notes\": \"Atualizado no fluxo\",\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/care-reminders/{{flowPlantName}}/{{careReminderType}}/{{careReminderNextDue}}", "host": ["{{baseUrl}}"], "path": ["care-reminders","{{flowPlantName}}","{{careReminderType}}","{{careReminderNextDue}}"] }
+          }
+        },
+        { "name": "16. Care Reminders - Overdue", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-reminders/overdue", "host": ["{{baseUrl}}"], "path": ["care-reminders","overdue"] } } },
+        { "name": "17. Care Reminders - Upcoming", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-reminders/upcoming", "host": ["{{baseUrl}}"], "path": ["care-reminders","upcoming"] } } },
+        {
+          "name": "18. Care Logs - Criar (Flow)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plantName\": \"{{flowPlantName}}\",\n  \"type\": \"{{careLogType}}\",\n  \"date\": \"{{careLogDate}}\",\n  \"notes\": \"Registro do fluxo\",\n  \"photo\": \"https://example.com/log-flow.jpg\",\n  \"success\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/care-logs", "host": ["{{baseUrl}}"], "path": ["care-logs"] }
+          }
+        },
+        { "name": "19. Care Logs - Listar todos", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-logs", "host": ["{{baseUrl}}"], "path": ["care-logs"] } } },
+        { "name": "20. Care Logs - Buscar por identificador composto", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-logs/{{flowPlantName}}/{{careLogType}}/{{careLogDate}}", "host": ["{{baseUrl}}"], "path": ["care-logs","{{flowPlantName}}","{{careLogType}}","{{careLogDate}}"] } } },
+        {
+          "name": "21. Care Logs - Atualizar (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"notes\": \"Notas do log atualizadas no fluxo\",\n  \"success\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/care-logs/{{flowPlantName}}/{{careLogType}}/{{careLogDate}}", "host": ["{{baseUrl}}"], "path": ["care-logs","{{flowPlantName}}","{{careLogType}}","{{careLogDate}}"] }
+          }
+        },
+        { "name": "22. Care Logs - Recent (últimos 30 dias)", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-logs/recent", "host": ["{{baseUrl}}"], "path": ["care-logs","recent"] } } },
+        { "name": "23. Care Logs - Successful", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/care-logs/successful", "host": ["{{baseUrl}}"], "path": ["care-logs","successful"] } } },
+        { "name": "24. Care Logs - Remover (DELETE)", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/care-logs/{{flowPlantName}}/{{careLogType}}/{{careLogDate}}", "host": ["{{baseUrl}}"], "path": ["care-logs","{{flowPlantName}}","{{careLogType}}","{{careLogDate}}"] } } },
+  { "name": "25. Care Reminders - Remover (DELETE)", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/care-reminders/{{flowPlantName}}/{{careReminderType}}/{{careReminderNextDue}}", "host": ["{{baseUrl}}"], "path": ["care-reminders","{{flowPlantName}}","{{careReminderType}}","{{careReminderNextDue}}"] } } },
+        { "name": "26. Plants - Remover planta (Flow)", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/plants/{{flowPlantName}}", "host": ["{{baseUrl}}"], "path": ["plants","{{flowPlantName}}"] } } },
+        { "name": "27. Locations - Remover localização (Flow)", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/locations/{{flowLocationName}}", "host": ["{{baseUrl}}"], "path": ["locations","{{flowLocationName}}"] } } },
+        { "name": "28. Species - Remover espécie (Flow)", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/species/{{flowSpeciesName}}", "host": ["{{baseUrl}}"], "path": ["species","{{flowSpeciesName}}"] } } }
       ]
     }
   ]

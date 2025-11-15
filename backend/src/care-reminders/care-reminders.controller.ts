@@ -25,7 +25,7 @@ export class CareRemindersController {
   @Post()
   @ApiOperation({ 
     summary: 'Criar novo lembrete',
-    description: 'Cria um novo lembrete de cuidado para uma planta' 
+    description: 'Cria um novo lembrete de cuidado. Exemplo válido: { plantName: "Rosa do Deserto", type: "watering", frequency: 7, lastDone: "2025-11-15", nextDue: "2025-12-01", isActive: true }' 
   })
   @ApiResponse({ 
     status: HttpStatus.CREATED, 
@@ -43,7 +43,7 @@ export class CareRemindersController {
   @Get()
   @ApiOperation({ 
     summary: 'Listar todos os lembretes',
-    description: 'Retorna todos os lembretes de cuidado cadastrados' 
+    description: 'Retorna todos os lembretes de cuidado cadastrados'
   })
   @ApiQuery({ 
     name: 'plantName', 
@@ -61,7 +61,13 @@ export class CareRemindersController {
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lista de lembretes retornada com sucesso', 
-    type: [CareReminder] 
+    type: [CareReminder],
+    schema: {
+      example: [
+        { id: 'uuid1', plantId: 'uuidp1', type: 'watering', frequency: 7, lastDone: '2025-11-15', nextDue: '2025-12-01', isActive: true },
+        { id: 'uuid2', plantId: 'uuidp2', type: 'pruning', frequency: 30, lastDone: '2025-11-10', nextDue: '2025-12-10', isActive: true }
+      ]
+    }
   })
   findAll(
     @Query('plantName') plantName?: string,
@@ -78,13 +84,26 @@ export class CareRemindersController {
 
   @Get('overdue')
   @ApiOperation({ 
-    summary: 'Lembretes atrasados',
-    description: 'Retorna lembretes com data de vencimento no passado' 
+    summary: 'Lembretes já realizados (passados ou hoje)',
+    description: 'Retorna lembretes ativos com lastDone <= hoje. Útil para histórico recente.' 
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'Lembretes atrasados encontrados', 
-    type: [CareReminder] 
+    description: 'Lembretes com lastDone passado ou hoje retornados com sucesso', 
+    type: [CareReminder],
+    schema: {
+      example: [
+        {
+          id: 'b4f1c2c0-1111-2222-3333-444455556666',
+          plantId: 'a1b2c3d4-9999-8888-7777-666655554444',
+          type: 'watering',
+          frequency: 7,
+          lastDone: '2025-11-15',
+          nextDue: '2025-12-01',
+          isActive: true
+        }
+      ]
+    }
   })
   findOverdue(): Promise<CareReminder[]> {
     return this.careRemindersService.findOverdue();
@@ -92,13 +111,26 @@ export class CareRemindersController {
 
   @Get('upcoming')
   @ApiOperation({ 
-    summary: 'Lembretes próximos',
-    description: 'Retorna lembretes com vencimento em até 3 dias' 
+    summary: 'Lembretes futuros',
+    description: 'Retorna lembretes ativos com nextDue > hoje (somente futuro).' 
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'Lembretes próximos encontrados', 
-    type: [CareReminder] 
+    description: 'Lembretes futuros retornados com sucesso', 
+    type: [CareReminder],
+    schema: {
+      example: [
+        {
+          id: 'c7e8f9a0-1234-5678-9101-abcdefabcdef',
+          plantId: 'a1b2c3d4-9999-8888-7777-666655554444',
+          type: 'fertilizing',
+          frequency: 30,
+          lastDone: '2025-11-01',
+          nextDue: '2025-12-10',
+          isActive: true
+        }
+      ]
+    }
   })
   findUpcoming(): Promise<CareReminder[]> {
     return this.careRemindersService.findUpcoming();
@@ -125,7 +157,7 @@ export class CareRemindersController {
   })
   @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
   @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
-  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
+  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2025-12-01' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lembrete encontrado', 
@@ -146,11 +178,11 @@ export class CareRemindersController {
   @Patch(':plantName/:type/:nextDue')
   @ApiOperation({ 
     summary: 'Atualizar lembrete por identificador composto',
-    description: 'Atualiza parcialmente os dados de um lembrete usando identificador composto (plantName, type, nextDue)' 
+    description: 'Atualiza parcialmente os dados de um lembrete usando identificador composto (plantName, type, nextDue). Observação: plantName, type e nextDue são imutáveis no PATCH.' 
   })
   @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
   @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
-  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
+  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2025-12-01' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
     description: 'Lembrete atualizado com sucesso', 
@@ -175,30 +207,7 @@ export class CareRemindersController {
     return this.careRemindersService.update(reminder.id, updateCareReminderDto);
   }
 
-  @Patch(':plantName/:type/:nextDue/mark-done')
-  @ApiOperation({ 
-    summary: 'Marcar lembrete como concluído por identificador composto',
-    description: 'Marca um lembrete como feito e atualiza a próxima data usando identificador composto' 
-  })
-  @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
-  @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
-  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Lembrete marcado como concluído', 
-    type: CareReminder 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Lembrete não encontrado' 
-  })
-  async markAsDone(
-    @Param('plantName') plantName: string,
-    @Param('type') type: string,
-    @Param('nextDue') nextDue: string,
-  ): Promise<CareReminder> {
-    return this.careRemindersService.markAsDoneByComposite(plantName, type, nextDue);
-  }
+  // Endpoint de marcar como concluído foi removido a pedido do usuário
 
   @Delete(':plantName/:type/:nextDue')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -208,7 +217,7 @@ export class CareRemindersController {
   })
   @ApiParam({ name: 'plantName', description: 'Nome da planta', example: 'Rosa do Deserto' })
   @ApiParam({ name: 'type', description: 'Tipo do lembrete', example: 'watering' })
-  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2024-01-20' })
+  @ApiParam({ name: 'nextDue', description: 'Data do próximo vencimento (YYYY-MM-DD)', example: '2025-11-22' })
   @ApiResponse({ 
     status: HttpStatus.NO_CONTENT, 
     description: 'Lembrete removido com sucesso' 

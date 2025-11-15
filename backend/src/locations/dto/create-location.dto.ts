@@ -27,7 +27,7 @@ export class CreateLocationDto {
   @IsNotEmpty({ message: 'O nome da localização é obrigatório.' })
   @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+$/, { message: 'O nome da localização contém caracteres inválidos.' })
   name: string;
-
+  //Em Locations, preferi manter  nomes com números, pois pode-se existir Sala 1, Sala 2, etc...
   @ApiProperty({ 
     description: 'Tipo de ambiente',
     example: 'indoor',

@@ -25,16 +25,22 @@ export class CreateCareLogDto {
   @IsEnum(CareLogType)
   type: CareLogType;
 
-  @ApiProperty({ description: 'Data em que o cuidado foi realizado (YYYY-MM-DD)', example: '2024-01-15' })
+  // Exemplo usa data de HOJE (válida para log de cuidado)
+  @ApiProperty({ description: 'Data em que o cuidado foi realizado (YYYY-MM-DD)', example: '2025-11-15' })
   @IsDateString({}, { message: 'Data inválida. Use o formato YYYY-MM-DD.' })
   @IsNotFutureDate({ message: 'A data do cuidado só pode ser hoje ou uma data passada.' })
   date: string;
 
-  @ApiPropertyOptional({ description: 'Observações sobre o cuidado realizado', example: 'Planta estava com folhas amarelas', maxLength: 500 })
+  @ApiPropertyOptional({ description: 'Observações sobre o cuidado realizado', example: 'Regada com 500ml de água filtrada', maxLength: 500 })
   @IsString({ message: 'Observações deve ser um texto.' })
   @IsNotEmpty({ message: 'O campo observações é obrigatório.' })
   @MaxLength(500, { message: 'O campo observações deve ter no máximo 500 caracteres.' })
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'URL da foto ou data URI (data:image/...)', example: 'https://example.com/regababosa.jpg' })
+  @IsOptional()
+  @IsString({ message: 'A foto deve ser uma string (URL ou data URI).' })
+  photo?: string;
 
   @ApiProperty({ description: 'Indica se o cuidado foi realizado com sucesso', example: true })
   @IsBoolean()

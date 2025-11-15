@@ -88,14 +88,15 @@ export class CareRemindersService {
       const plant = await this.plantsService.findByName(plantName);
       if (!plant) throw new BadRequestException(`Planta '${plantName}' não encontrada`);
 
-      // Regra de unicidade: não pode existir reminder com mesmo plantId + type + nextDue
-      const existing = await this.careRemindersRepository.findOne({
-        where: {
-          plantId: plant.id,
-          type,
-          nextDue: nd,
-        },
-      });
+      // Regra de unicidade: não pode existir reminder com mesmo plantId + type + nextDue (comparação por string YYYY-MM-DD para evitar offset timezone)
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const nextDueYMD = `${nd.getFullYear()}-${pad(nd.getMonth() + 1)}-${pad(nd.getDate())}`;
+      const existing = await this.careRemindersRepository
+        .createQueryBuilder('reminder')
+        .where('reminder.plantId = :plantId', { plantId: plant.id })
+        .andWhere('reminder.type = :type', { type })
+        .andWhere('reminder.nextDue = :nextDue', { nextDue: nextDueYMD })
+        .getOne();
 
       if (existing) {
         throw new BadRequestException(`Lembrete para planta '${plantName}', tipo '${type}' e data '${nextDue}' já existe`);
@@ -190,14 +191,17 @@ export class CareRemindersService {
   async findOneByComposite(plantName: string, type: string, nextDue: string): Promise<CareReminder> {
     const plant = await this.plantsService.findByName(plantName);
     if (!plant) throw new NotFoundException(`Planta '${plantName}' não encontrada`);
-
-    const nextDueDateParsed = parseYMDToLocalDate(nextDue);
-    if (!nextDueDateParsed) throw new NotFoundException(`Lembrete para planta '${plantName}', tipo '${type}' e data '${nextDue}' não encontrado`);
-    const reminder = await this.careRemindersRepository.findOne({
-      where: { plantId: plant.id, type, nextDue: nextDueDateParsed },
-      relations: ['plant'],
-    });
-
+    // Valida formato da data
+    const parsed = parseYMDToLocalDate(nextDue);
+    if (!parsed) throw new NotFoundException(`Lembrete para planta '${plantName}', tipo '${type}' e data '${nextDue}' não encontrado`);
+    // Busca usando comparação direta por string (evita diferença de fuso ao transformar Date)
+    const reminder = await this.careRemindersRepository
+      .createQueryBuilder('reminder')
+      .leftJoinAndSelect('reminder.plant', 'plant')
+      .where('reminder.plantId = :plantId', { plantId: plant.id })
+      .andWhere('reminder.type = :type', { type })
+      .andWhere('reminder.nextDue = :nextDue', { nextDue })
+      .getOne();
     if (!reminder) throw new NotFoundException(`Lembrete para planta '${plantName}', tipo '${type}' e data '${nextDue}' não encontrado`);
     return reminder;
   }
@@ -212,17 +216,18 @@ export class CareRemindersService {
     const reminder = await this.findOne(id); // Valida se o lembrete existe
     
     try {
+      // Bloqueia alterações nos campos do identificador composto
+      const forbiddenKeys = ['plantName', 'type', 'nextDue'];
+      for (const key of forbiddenKeys) {
+        if (Object.prototype.hasOwnProperty.call(updateCareReminderDto as any, key)) {
+          throw new BadRequestException('Não é permitido alterar plantName, type ou nextDue em PATCH. Crie um novo lembrete se precisar modificar esses campos.');
+        }
+      }
+
       const updateData: any = { ...updateCareReminderDto };
 
       // Se fornecer plantName, resolve para plantId
-      if (updateCareReminderDto.plantName) {
-        if (!updateCareReminderDto.plantName?.trim()) {
-          throw new BadRequestException('O nome da planta não pode ser vazio.');
-        }
-        const plant = await this.plantsService.findByName(updateCareReminderDto.plantName);
-        if (!plant) throw new BadRequestException(`Planta '${updateCareReminderDto.plantName}' não encontrada`);
-        updateData.plantId = plant.id;
-      }
+      // (Imutável) plantName não pode ser atualizado
 
       // Valida frequência se fornecida
       if (updateCareReminderDto.frequency !== undefined) {
@@ -241,15 +246,7 @@ export class CareRemindersService {
         if (ld.getTime() > today.getTime()) throw new BadRequestException('A data da última execução não pode ser futura.');
         updateData.lastDone = ld;
       }
-      if (updateCareReminderDto.nextDue !== undefined) {
-        if (!updateCareReminderDto.nextDue) throw new BadRequestException('A data do próximo vencimento não pode ser vazia.');
-        const nd = new Date(updateCareReminderDto.nextDue);
-        if (isNaN(nd.getTime())) throw new BadRequestException('Data de próximo vencimento inválida.');
-        nd.setHours(0, 0, 0, 0);
-        const today = new Date(); today.setHours(0,0,0,0);
-        if (nd.getTime() <= today.getTime()) throw new BadRequestException('A próxima data deve ser futura (maior que hoje).');
-        updateData.nextDue = nd;
-      }
+      // (Imutável) nextDue não pode ser atualizado
 
       if (updateCareReminderDto.notes !== undefined) {
         if (!updateCareReminderDto.notes?.trim()) {
@@ -261,21 +258,7 @@ export class CareRemindersService {
       }
 
       // Se alterar plantId/type/nextDue, verificar unicidade
-      const candidatePlantId = updateData.plantId ?? reminder.plantId;
-      const candidateType = updateData.type ?? reminder.type;
-      const candidateNextDue = updateData.nextDue ?? reminder.nextDue;
-
-      const conflict = await this.careRemindersRepository.findOne({
-        where: {
-          plantId: candidatePlantId,
-          type: candidateType,
-          nextDue: candidateNextDue,
-        },
-      });
-
-      if (conflict && conflict.id !== reminder.id) {
-        throw new BadRequestException(`Outro lembrete já existe para planta '${updateCareReminderDto.plantName ?? ''}', tipo '${candidateType}' e data '${candidateNextDue.toISOString().slice(0,10)}'`);
-      }
+      // (Sem verificação de unicidade aqui porque identificador composto é imutável no PATCH)
 
       const updated = this.careRemindersRepository.merge(reminder, updateData);
       return await this.careRemindersRepository.save(updated);
@@ -311,15 +294,19 @@ export class CareRemindersService {
    * @returns Lembretes atrasados e ativos
    */
   async findOverdue(): Promise<CareReminder[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Zera horas para comparar apenas datas
+    // Overdue segundo novo requisito: lembretes cuja última realização (lastDone)
+    // foi em dia passado ou hoje: lastDone <= hoje. Mantém apenas ativos.
+    // Usa comparação por string YYYY-MM-DD para evitar problemas de timezone.
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const now = new Date();
+    const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
     return await this.careRemindersRepository
       .createQueryBuilder('reminder')
       .leftJoinAndSelect('reminder.plant', 'plant')
-      .where('reminder.nextDue < :today', { today })
+      .where('reminder.lastDone <= :today', { today: todayYMD })
       .andWhere('reminder.isActive = :isActive', { isActive: true })
-      .orderBy('reminder.nextDue', 'ASC')
+      .orderBy('reminder.lastDone', 'ASC')
       .getMany();
   }
 
@@ -328,47 +315,21 @@ export class CareRemindersService {
    * @returns Lembretes próximos do vencimento
    */
   async findUpcoming(): Promise<CareReminder[]> {
-    const today = new Date();
-    const threeDaysFromNow = new Date();
-    threeDaysFromNow.setDate(today.getDate() + 3);
+    // Lembretes futuros (exclui hoje): nextDue > hoje usando data pura YYYY-MM-DD
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const now = new Date();
+    const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
     return await this.careRemindersRepository
       .createQueryBuilder('reminder')
       .leftJoinAndSelect('reminder.plant', 'plant')
-      .where('reminder.nextDue BETWEEN :today AND :future', {
-        today,
-        future: threeDaysFromNow,
-      })
+      .where('reminder.nextDue > :today', { today: todayYMD })
       .andWhere('reminder.isActive = :isActive', { isActive: true })
       .orderBy('reminder.nextDue', 'ASC')
       .getMany();
   }
 
-  /**
-   * Marca um lembrete como concluído
-   * @param id UUID do lembrete
-   * @returns Lembrete atualizado
-   */
-  async markAsDone(id: string): Promise<CareReminder> {
-    const reminder = await this.findOne(id);
-    
-    const today = new Date();
-    const nextDue = new Date();
-    nextDue.setDate(today.getDate() + reminder.frequency);
-
-    reminder.lastDone = today;
-    reminder.nextDue = nextDue;
-
-    return await this.careRemindersRepository.save(reminder);
-  }
-
-  /**
-   * Marca um lembrete como concluído usando identificador composto
-   */
-  async markAsDoneByComposite(plantName: string, type: string, nextDue: string): Promise<CareReminder> {
-    const reminder = await this.findOneByComposite(plantName, type, nextDue);
-    return this.markAsDone(reminder.id);
-  }
+  // mark-done removido a pedido do usuário; manter lógica simples via update quando necessário
 
   /**
    * Busca lembretes ativos

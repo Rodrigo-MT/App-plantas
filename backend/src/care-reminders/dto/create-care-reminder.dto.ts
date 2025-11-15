@@ -30,17 +30,19 @@ export class CreateCareReminderDto {
   @Max(99, { message: 'A frequência máxima é 99 dias.' })
   frequency: number;
 
-  @ApiProperty({ description: 'Data da última execução (YYYY-MM-DD)', example: '2024-01-10' })
+  // Exemplo usa data de HOJE (válida: não futura)
+  @ApiProperty({ description: 'Data da última execução (YYYY-MM-DD)', example: '2025-11-15' })
   @IsDateString({}, { message: 'Data inválida. Use o formato YYYY-MM-DD.' })
   @IsNotFutureDate({ message: 'A última realização não pode ser futura; use hoje ou uma data passada.' })
   lastDone: string;
 
-  @ApiProperty({ description: 'Próxima data de vencimento (YYYY-MM-DD)', example: '2024-01-20' })
+  // Exemplo usa data FUTURA (válida para nextDue)
+  @ApiProperty({ description: 'Próxima data de vencimento (YYYY-MM-DD)', example: '2025-12-01' })
   @IsDateString({}, { message: 'Data inválida. Use o formato YYYY-MM-DD.' })
   @IsStrictFutureDate({ message: 'A próxima data deve ser futura (maior que hoje).' })
   nextDue: string;
 
-  @ApiPropertyOptional({ description: 'Observações adicionais', example: 'Usar água filtrada' })
+  @ApiPropertyOptional({ description: 'Observações adicionais', example: 'Usar água filtrada (regou 500ml)' })
   @IsString({ message: 'Observações deve ser um texto.' })
   @IsNotEmpty({ message: 'O campo observações é obrigatório.' })
   @MaxLength(500, { message: 'O campo observações deve ter no máximo 500 caracteres.' })
